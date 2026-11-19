@@ -117,8 +117,8 @@ public class MainActivity extends Activity {
             if (!allGranted) {
                 // Show mandatory dialog prompting user to grant permissions
                 new AlertDialog.Builder(this)
-                    .setTitle("Mandatory Permissions Required")
-                    .setMessage("Bluetooth, Camera, and Microphone permissions are mandatory for Love Spouse to broadcast to your toy and enable video sync.\n\nPlease grant all permissions to continue.")
+                    .setTitle("Permissions Required")
+                    .setMessage("These permissions are required to connect to the toy and make it work.\n\nPlease grant all permissions to continue.")
                     .setCancelable(false)
                     .setPositiveButton("Grant Permissions", (dialog, which) -> checkAndRequestMandatoryPermissions())
                     .setNegativeButton("Open Settings", (dialog, which) -> {
