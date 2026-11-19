@@ -953,6 +953,44 @@
                 right: 12px;
             }
         }
+    
+        /* Floating Partner Broadcast Toggle Pill (beside screen) */
+        .stream-toggle-pill {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 998;
+            background: rgba(28, 28, 38, 0.95);
+            border: 1px solid var(--accent);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 24px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .stream-toggle-pill:hover {
+            background: rgba(45, 45, 60, 0.98);
+            box-shadow: 0 6px 24px var(--accent-glow);
+            transform: translateY(-2px);
+        }
+        .stream-toggle-pill.active {
+            background: linear-gradient(135deg, #ff4081, #7c4dff);
+            border-color: #ff4081;
+        }
+        .stream-arrow-icon {
+            display: inline-block;
+            font-size: 0.72rem;
+            transition: transform 0.25s ease;
+        }
+
     </style>
     <script src="peerjs.min.js"></script>
 </head>
@@ -1159,6 +1197,7 @@
         <div class="floating-video-actions">
             <button class="floating-action-btn" title="Toggle Fullscreen" onclick="toggleVideoFullscreen('remotePartnerVideo')">⛶</button>
             <button class="floating-action-btn" id="partnerVideoToggleBtn" title="Minimize/Expand" onclick="toggleFloatingCard('partnerVideoWindow', 'partnerVideoToggleBtn')">−</button>
+            <button class="floating-action-btn" title="Hide Live Feed" onclick="togglePartnerStreamVisibility()">✕</button>
         </div>
     </div>
     <div class="floating-video-body" style="position: relative; min-height: 180px; background: #000;">
@@ -1174,6 +1213,15 @@
         </div>
         <span>Drag to reposition</span>
     </div>
+</div>
+
+
+<!-- Floating Stream Toggle Pill for Partner (Beside screen) -->
+<div id="partnerStreamToggleDock" style="display: none;">
+    <button id="partnerStreamToggleBtn" class="stream-toggle-pill" title="Toggle Live Stream Broadcast" onclick="togglePartnerStreamVisibility()">
+        <span>📹 Live Feed</span>
+        <span id="partnerStreamToggleArrow" class="stream-arrow-icon">▼</span>
+    </button>
 </div>
 
 <div class="container">
@@ -1386,6 +1434,17 @@
                     💡 <strong>How it works:</strong> Send this link to your partner on any device. When they open it, their screen connects directly to your toy live over the internet!
                 </p>
             </div>
+        </div>
+
+        <!-- Partner Live Feed Toggle Control -->
+        <div id="partnerStreamInlineControl" style="display: none; margin-top: 12px; padding: 10px 14px; background: #161622; border: 1px solid var(--border); border-radius: 10px; align-items: center; justify-content: space-between;">
+            <div style="font-size: 0.82rem; color: var(--text-main);">
+                <span>📹 Host Video & Voice Broadcast:</span>
+                <span id="partnerStreamStatusText" style="color: var(--text-sub); font-weight: 700; margin-left: 6px;">OFF (Hidden)</span>
+            </div>
+            <button id="partnerInlineToggleBtn" class="btn" style="padding: 6px 14px; font-size: 0.8rem; background: var(--bg-card-hover); border: 1px solid var(--border);" onclick="togglePartnerStreamVisibility()">
+                <span id="partnerInlineToggleLabel">Show Feed</span> <span id="partnerInlineToggleArrow">▼</span>
+            </button>
         </div>
 
         <!-- Join / Remote Controller Section (For the Partner) -->
@@ -2825,8 +2884,8 @@ function startPreset(name) {
 
             return localHostMediaStream;
         } catch (err) {
-            log(`Camera/Mic Access error: ${err.message}`, "error");
-            alert("Could not access camera: " + err.message + "\nPlease check browser camera permissions.");
+            log(`Camera/Mic Access notice: ${err.message}`, "info");
+            showToast("Camera/Mic notice: " + err.message);
             return null;
         }
     }
@@ -2870,6 +2929,64 @@ function startPreset(name) {
             toast.style.opacity = "0";
             toast.style.transform = "translateX(-50%) translateY(-10px)";
         }, duration);
+    }
+
+    
+    let partnerStreamVisible = false;
+
+    function togglePartnerStreamVisibility() {
+        partnerStreamVisible = !partnerStreamVisible;
+        const partnerCard = document.getElementById("partnerVideoWindow");
+        const partnerVid = document.getElementById("remotePartnerVideo");
+        const toggleBtn = document.getElementById("partnerStreamToggleBtn");
+        const arrow = document.getElementById("partnerStreamToggleArrow");
+        const inlineStatus = document.getElementById("partnerStreamStatusText");
+        const inlineBtn = document.getElementById("partnerInlineToggleBtn");
+        const inlineLabel = document.getElementById("partnerInlineToggleLabel");
+        const inlineArrow = document.getElementById("partnerInlineArrow");
+
+        if (partnerStreamVisible) {
+            if (partnerCard) partnerCard.style.display = "flex";
+            if (toggleBtn) {
+                toggleBtn.classList.add("active");
+            }
+            if (arrow) arrow.innerText = "▲";
+            if (inlineStatus) {
+                inlineStatus.innerText = "ON (Live)";
+                inlineStatus.style.color = "var(--success)";
+            }
+            if (inlineLabel) inlineLabel.innerText = "Hide Feed";
+            if (inlineArrow) inlineArrow.innerText = "▲";
+            if (inlineBtn) {
+                inlineBtn.style.background = "var(--accent)";
+                inlineBtn.style.color = "#fff";
+            }
+            if (partnerVid) {
+                partnerVid.play().catch(() => {});
+                unmutePartnerAudio();
+            }
+            showToast("Live video & audio broadcast ON");
+        } else {
+            if (partnerCard) partnerCard.style.display = "none";
+            if (toggleBtn) {
+                toggleBtn.classList.remove("active");
+            }
+            if (arrow) arrow.innerText = "▼";
+            if (inlineStatus) {
+                inlineStatus.innerText = "OFF (Hidden)";
+                inlineStatus.style.color = "var(--text-sub)";
+            }
+            if (inlineLabel) inlineLabel.innerText = "Show Feed";
+            if (inlineArrow) inlineArrow.innerText = "▼";
+            if (inlineBtn) {
+                inlineBtn.style.background = "var(--bg-card-hover)";
+                inlineBtn.style.color = "var(--text-main)";
+            }
+            if (partnerVid) {
+                partnerVid.muted = true;
+            }
+            showToast("Live broadcast hidden");
+        }
     }
 
     function unmutePartnerAudio() {
@@ -3140,9 +3257,14 @@ function startPreset(name) {
             const attachStream = (remoteStream) => {
                 const partnerVid = document.getElementById("remotePartnerVideo");
                 const partnerCard = document.getElementById("partnerVideoWindow");
-                if (!partnerVid || !partnerCard) return;
+                const dock = document.getElementById("partnerStreamToggleDock");
+                const inlineCtrl = document.getElementById("partnerStreamInlineControl");
 
-                partnerCard.style.display = "flex";
+                // Reveal the down arrow toggle button beside screen for partner
+                if (dock) dock.style.display = "inline-flex";
+                if (inlineCtrl) inlineCtrl.style.display = "flex";
+
+                if (!partnerVid || !partnerCard) return;
 
                 if (partnerVid.srcObject !== remoteStream) {
                     partnerVid.srcObject = remoteStream;
@@ -3151,23 +3273,21 @@ function startPreset(name) {
                 partnerVid.muted = true;
                 partnerVid.playsInline = true;
 
-                const p = partnerVid.play();
-                if (p !== undefined) {
-                    p.then(() => {
-                        const prompt = document.getElementById("partnerUnmutePrompt");
-                        if (prompt && partnerVid.muted) prompt.style.display = "flex";
-                    }).catch(err => {
-                        console.warn("Autoplay notice:", err);
-                        const prompt = document.getElementById("partnerUnmutePrompt");
-                        if (prompt) prompt.style.display = "flex";
-                    });
+                // STRICTLY OFF BY DEFAULT until partner clicks the down arrow ▼
+                if (!partnerStreamVisible) {
+                    partnerCard.style.display = "none";
+                } else {
+                    partnerCard.style.display = "flex";
+                    partnerVid.play().catch(() => {});
                 }
 
                 remoteStream.onaddtrack = () => {
                     if (partnerVid.srcObject !== remoteStream) {
                         partnerVid.srcObject = remoteStream;
                     }
-                    partnerVid.play().catch(() => {});
+                    if (partnerStreamVisible) {
+                        partnerVid.play().catch(() => {});
+                    }
                 };
             };
 
