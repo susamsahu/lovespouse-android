@@ -32,7 +32,11 @@ public class LoveSpouseBleManager {
     public LoveSpouseBleManager(Context context) {
         this.context = context;
         initCommands();
-        initBluetooth();
+        try {
+            initBluetooth();
+        } catch (Throwable t) {
+            Log.w(TAG, "Initial BLE setup deferred until permissions granted: " + t.getMessage());
+        }
     }
 
     private void initCommands() {
@@ -71,12 +75,18 @@ public class LoveSpouseBleManager {
     }
 
     private void initBluetooth() {
-        BluetoothManager bm = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        if (bm != null) {
-            BluetoothAdapter adapter = bm.getAdapter();
-            if (adapter != null && adapter.isEnabled()) {
-                advertiser = adapter.getBluetoothLeAdvertiser();
+        try {
+            BluetoothManager bm = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+            if (bm != null) {
+                BluetoothAdapter adapter = bm.getAdapter();
+                if (adapter != null && adapter.isEnabled()) {
+                    advertiser = adapter.getBluetoothLeAdvertiser();
+                }
             }
+        } catch (SecurityException se) {
+            Log.w(TAG, "Bluetooth permission not yet granted during init: " + se.getMessage());
+        } catch (Throwable t) {
+            Log.e(TAG, "Error initializing Bluetooth", t);
         }
     }
 
