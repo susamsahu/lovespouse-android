@@ -1,0 +1,3403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Device BLE Controller</title>
+    <style>
+        :root {
+            --bg-primary: #121216;
+            --bg-card: #1c1c24;
+            --bg-card-hover: #242430;
+            --accent: #ff4081;
+            --accent-glow: rgba(255, 64, 129, 0.4);
+            --accent-secondary: #7c4dff;
+            --text-main: #f0f0f5;
+            --text-sub: #9e9eb3;
+            --success: #00e676;
+            --danger: #ff1744;
+            --warning: #ffb300;
+            --border: #2e2e3e;
+            --slider-track: #2a2a38;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        header {
+            text-align: center;
+            padding-bottom: 4px;
+        }
+
+        header h1 {
+            font-size: 1.85rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff4081, #7c4dff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+        }
+
+        .mode-banner {
+            background: rgba(0, 230, 118, 0.1);
+            border: 1px solid rgba(0, 230, 118, 0.35);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            color: #b9f6ca;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(145deg, #ff1744, #d50000);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            box-shadow: 0 4px 16px rgba(255, 23, 68, 0.4);
+        }
+
+        .pill-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .pill-btn {
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border);
+            color: var(--text-sub);
+            padding: 10px 4px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .pill-btn.active {
+            background: linear-gradient(135deg, rgba(255, 64, 129, 0.25), rgba(124, 77, 255, 0.25));
+            border-color: var(--accent);
+            color: #fff;
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .preset-grid-patterns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .preset-btn {
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 12px 6px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .preset-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .preset-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+            box-shadow: 0 4px 14px var(--accent-glow);
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-sub);
+        }
+
+        .slider-val {
+            color: var(--accent);
+            font-weight: 800;
+            font-size: 1.2rem;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 12px;
+            border-radius: 6px;
+            background: var(--slider-track);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        /* Interactive Touch Pad Styles */
+        #touchPad {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(180deg, rgba(255, 64, 129, 0.25) 0%, rgba(124, 77, 255, 0.12) 50%, rgba(14, 14, 20, 0.95) 100%);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            position: relative;
+            cursor: crosshair;
+            user-select: none;
+            overflow: hidden;
+            touch-action: none;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .pad-zone {
+            position: absolute;
+            left: 0;
+            right: 0;
+            padding: 8px 14px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .top-zone {
+            top: 0;
+            background: linear-gradient(180deg, rgba(255, 64, 129, 0.45) 0%, transparent 100%);
+            color: #ff80ab;
+            text-shadow: 0 0 10px rgba(255, 64, 129, 0.9);
+            border-bottom: 1px dashed rgba(255, 64, 129, 0.35);
+        }
+
+        .bottom-zone {
+            bottom: 0;
+            background: linear-gradient(0deg, rgba(0, 230, 118, 0.25) 0%, transparent 100%);
+            color: #b9f6ca;
+            text-shadow: 0 0 10px rgba(0, 230, 118, 0.7);
+            border-top: 1px dashed rgba(0, 230, 118, 0.35);
+        }
+
+        .pad-scale {
+            position: absolute;
+            right: 14px;
+            top: 36px;
+            bottom: 36px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .pad-tick {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--text-sub);
+            opacity: 0.75;
+        }
+
+        #touchIndicator {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 25px var(--accent);
+            position: absolute;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+            z-index: 10;
+            transition: background 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        #touchLevelBadge {
+            position: absolute;
+            bottom: 44px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(18, 18, 24, 0.96);
+            border: 1px solid var(--accent);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 12px;
+            white-space: nowrap;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+        }
+
+        .touch-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            pointer-events: none;
+            text-align: center;
+            opacity: 0.85;
+            transition: opacity 0.2s ease;
+            z-index: 2;
+            line-height: 1.5;
+        }
+
+        
+        /* Sound & Music Reactive Mode Styles */
+        
+        /* Advanced Specialty & Sequencer Styles */
+        .sequencer-container {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 6px;
+            margin: 12px 0;
+            background: #0d0d14;
+            padding: 12px 8px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .seq-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .seq-bar-track {
+            width: 100%;
+            height: 100px;
+            background: #1e1e28;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column-reverse;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .seq-bar-fill {
+            width: 100%;
+            background: linear-gradient(180deg, #ff4081, #7c4dff);
+            border-radius: 4px;
+            transition: height 0.1s ease;
+        }
+
+        .seq-step.active .seq-bar-track {
+            border-color: #00e676;
+            box-shadow: 0 0 12px rgba(0, 230, 118, 0.7);
+        }
+
+        .seq-step-val {
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .seq-step-num {
+            font-size: 0.7rem;
+            color: var(--text-sub);
+        }
+
+        /* Tilt Meter Styles */
+        .tilt-meter-container {
+            width: 100%;
+            height: 16px;
+            background: var(--slider-track);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .tilt-meter-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00e676, #ff9100, #ff1744);
+            border-radius: 8px;
+            transition: width 0.08s ease;
+        }
+
+        .sound-visualizer-box {
+            background: #0d0d14;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .vu-meter-bar-container {
+            width: 100%;
+            height: 18px;
+            background: var(--slider-track);
+            border-radius: 9px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .vu-meter-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00e676 0%, #ffb300 65%, #ff1744 100%);
+            border-radius: 9px;
+            transition: width 0.05s ease-out;
+            box-shadow: 0 0 14px rgba(255, 64, 129, 0.45);
+        }
+
+        .vu-meter-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            color: var(--text-sub);
+        }
+
+        .log-box {
+            background: #0d0d12;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            height: 130px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.78rem;
+            color: #9ef0be;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 4px;
+        }
+
+        .log-entry.error { color: #ff5252; }
+        .log-entry.info { color: #82b1ff; }
+        .log-entry.tx { color: #00e676; }
+
+        /* Top Hamburger Button */
+        .hamburger-btn {
+            position: absolute;
+            left: 0;
+            top: 2px;
+            width: 40px;
+            height: 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            z-index: 100;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .hamburger-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .hamburger-btn span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--text-main);
+            border-radius: 2px;
+            transition: all 0.25s ease;
+        }
+
+        /* Drawer Backdrop */
+        .drawer-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 1100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .drawer-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Side Navigation Drawer */
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 295px;
+            max-width: 85vw;
+            height: 100vh;
+            background: #15151f;
+            border-right: 1px solid var(--border);
+            z-index: 1200;
+            box-shadow: 6px 0 28px rgba(0, 0, 0, 0.6);
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .side-drawer.active {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .drawer-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff4081, #7c4dff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .drawer-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-top: 2px;
+        }
+
+        .drawer-close-btn {
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border);
+            color: var(--text-sub);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+
+        .drawer-close-btn:hover {
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .drawer-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .drawer-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            color: var(--text-main);
+            text-decoration: none;
+            background: transparent;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .drawer-item:hover, .drawer-item.active {
+            background: var(--bg-card);
+            border-color: var(--border);
+        }
+
+        .drawer-item.active {
+            border-left: 3px solid var(--accent);
+        }
+
+        .drawer-item-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            margin: 4px 0;
+        }
+
+        .drawer-icon {
+            font-size: 1.25rem;
+            width: 26px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .drawer-label-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .drawer-label {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .drawer-subtext {
+            font-size: 0.74rem;
+            color: var(--text-sub);
+        }
+
+        .drawer-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 6px 0;
+        }
+
+        .drawer-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 25px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #2b2b38;
+            transition: 0.25s ease;
+            border-radius: 34px;
+            border: 1px solid var(--border);
+        }
+
+        .switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 17px;
+            width: 17px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #fff;
+            transition: 0.25s ease;
+            border-radius: 50%;
+        }
+
+        input:checked + .switch-slider {
+            background: linear-gradient(135deg, #ff4081, #7c4dff);
+            border-color: var(--accent);
+        }
+
+        input:checked + .switch-slider:before {
+            transform: translateX(21px);
+        }
+
+        /* Modals (Settings & About) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-dialog {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            width: 100%;
+            max-width: 480px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            transform: scale(0.92);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-overlay.active .modal-dialog {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .modal-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-footer {
+            padding: 14px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        /* Advanced feature hiding helper */
+        .advanced-feature {
+            transition: opacity 0.25s ease;
+        }
+
+        .advanced-feature.hidden-mode {
+            display: none !important;
+        }
+
+        /* Floating Video Windows (Host Selfie Preview & Partner Live Feed) */
+        .floating-video-card {
+            position: fixed;
+            z-index: 1500;
+            background: #181824;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65), 0 0 16px rgba(255, 64, 129, 0.3);
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            user-select: none;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .floating-video-card:hover {
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8), 0 0 22px rgba(255, 64, 129, 0.5);
+        }
+
+        .floating-video-card.minimized .floating-video-body,
+        .floating-video-card.minimized .floating-video-footer {
+            display: none;
+        }
+
+        .floating-video-header {
+            background: rgba(28, 28, 38, 0.95);
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: move;
+            border-bottom: 1px solid var(--border);
+            touch-action: none;
+        }
+
+        .floating-video-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #ff4081;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .floating-video-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .floating-action-btn {
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 6px;
+            width: 26px;
+            height: 26px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .floating-action-btn:hover {
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .floating-video-body {
+            position: relative;
+            background: #000;
+            width: 100%;
+            min-height: 180px;
+        }
+
+        .floating-video-body video {
+            width: 100%;
+            height: auto;
+            min-height: 180px;
+            display: block;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .floating-video-footer {
+            padding: 6px 10px;
+            background: rgba(18, 18, 26, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: var(--text-sub);
+            border-top: 1px solid var(--border);
+        }
+
+        #hostSelfieWindow {
+            bottom: 18px;
+            right: 18px;
+            width: 200px;
+        }
+
+        #partnerVideoWindow {
+            top: 65px;
+            right: 18px;
+            width: 260px;
+        }
+
+        @media (max-width: 480px) {
+            #hostSelfieWindow {
+                width: 150px;
+                bottom: 12px;
+                right: 12px;
+            }
+            #partnerVideoWindow {
+                width: 190px;
+                top: 55px;
+                right: 12px;
+            }
+        }
+    </style>
+    <script src="peerjs.min.js"></script>
+</head>
+<body>
+
+<!-- Navigation Drawer Backdrop -->
+<div id="drawerBackdrop" class="drawer-backdrop" onclick="toggleDrawer(false)"></div>
+
+<!-- Side Navigation Drawer -->
+<nav id="sideDrawer" class="side-drawer" aria-label="Sidebar Menu">
+    <div class="drawer-header">
+        <div>
+            <div class="drawer-title">Smart Controller</div>
+            <div class="drawer-subtitle">Love Spouse BLE Hub</div>
+        </div>
+        <button class="drawer-close-btn" aria-label="Close Menu" onclick="toggleDrawer(false)">✕</button>
+    </div>
+
+    <div class="drawer-body">
+        <!-- 1. Home Option -->
+        <a href="#" class="drawer-item active" id="navHomeBtn" onclick="navigateHome(event)">
+            <span class="drawer-icon">🏠</span>
+            <div class="drawer-label-group">
+                <span class="drawer-label">Home</span>
+                <span class="drawer-subtext">Main Web Interface</span>
+            </div>
+        </a>
+
+        <!-- 2. Advance Toggle Option -->
+        <div class="drawer-item-toggle">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="drawer-icon">⚡</span>
+                <div class="drawer-label-group">
+                    <span class="drawer-label">Advanced Features</span>
+                    <span class="drawer-subtext" id="advToggleSubtext">Sound, Tilt, Sequencer & Partner</span>
+                </div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="advancedToggleCheckbox" checked onchange="onAdvancedToggleChange(this.checked)">
+                <span class="switch-slider"></span>
+            </label>
+        </div>
+
+        <div class="drawer-divider"></div>
+
+        <!-- 3. Settings Option -->
+        <a href="#" class="drawer-item" onclick="openSettingsModal(event)">
+            <span class="drawer-icon">⚙️</span>
+            <div class="drawer-label-group">
+                <span class="drawer-label">Settings</span>
+                <span class="drawer-subtext">Device, WakeLock & Preferences</span>
+            </div>
+        </a>
+
+        <!-- 4. About Option -->
+        <a href="#" class="drawer-item" onclick="openAboutModal(event)">
+            <span class="drawer-icon">ℹ️</span>
+            <div class="drawer-label-group">
+                <span class="drawer-label">About</span>
+                <span class="drawer-subtext">Version, Protocol & Hardware</span>
+            </div>
+        </a>
+    </div>
+
+    <div class="drawer-footer">
+        <span>BLE Relay</span>
+        <span id="drawerStatusText" style="color: var(--success); font-weight: 600;">● Online</span>
+    </div>
+</nav>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="modal-overlay" onclick="closeModalOnBackdrop(event, 'settingsModal')">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <span class="modal-title">⚙️ Controller Settings</span>
+            <button class="drawer-close-btn" onclick="closeModal('settingsModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <!-- Setting: Default Pattern Mode -->
+            <div>
+                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 6px;">
+                    Default Pattern Mode
+                </label>
+                <select id="settingDefaultMode" style="width: 100%; background: var(--bg-card-hover); border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; outline: none;" onchange="saveSettingDefaultMode(this.value)">
+                    <option value="shake">Continuous Shake (Vibration Motor 1)</option>
+                    <option value="shock">Pulse Shock (Motor 2 / Pulse)</option>
+                    <option value="telescopic">Telescopic (Thrust Motor 3)</option>
+                </select>
+            </div>
+
+            <!-- Setting: Screen Wake Lock -->
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--border);">
+                <div>
+                    <div style="font-size: 0.88rem; font-weight: 600;">Keep Screen Awake</div>
+                    <div style="font-size: 0.75rem; color: var(--text-sub);">Prevents phone display from sleeping while controlling</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="settingWakeLock" onchange="toggleWakeLock(this.checked)">
+                    <span class="switch-slider"></span>
+                </label>
+            </div>
+
+            <!-- Setting: Haptic Touch Feedback -->
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--border);">
+                <div>
+                    <div style="font-size: 0.88rem; font-weight: 600;">Haptic Vibration on Tap</div>
+                    <div style="font-size: 0.75rem; color: var(--text-sub);">Vibrates phone slightly when adjusting speeds</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="settingHaptics" checked onchange="toggleHaptics(this.checked)">
+                    <span class="switch-slider"></span>
+                </label>
+            </div>
+
+            <!-- Setting: Camera Selfie Mirror Preview -->
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--border);">
+                <div>
+                    <div style="font-size: 0.88rem; font-weight: 600;">Camera Mirror Preview</div>
+                    <div style="font-size: 0.75rem; color: var(--text-sub);">Show floating selfie preview on the main screen</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="settingCameraMirror" onchange="toggleCameraMirrorSetting(this.checked)">
+                    <span class="switch-slider"></span>
+                </label>
+            </div>
+
+            <!-- Diagnostics -->
+            <div style="background: #0d0d14; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 4px;">
+                <div style="font-size: 0.78rem; color: var(--text-sub); margin-bottom: 6px;">Server Diagnostics:</div>
+                <div style="font-size: 0.78rem; font-family: monospace; color: #a5d6a7;">
+                    <div>Local IP: <span id="diagLocalIp">192.168.1.5</span></div>
+                    <div>Port: 8000 (HTTP Threaded)</div>
+                    <div>Public Relay: <span id="diagPublicTunnel">Active</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" style="padding: 8px 18px; font-size: 0.85rem;" onclick="closeModal('settingsModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- About Modal -->
+<div id="aboutModal" class="modal-overlay" onclick="closeModalOnBackdrop(event, 'aboutModal')">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <span class="modal-title">ℹ️ About Controller</span>
+            <button class="drawer-close-btn" onclick="closeModal('aboutModal')">✕</button>
+        </div>
+        <div class="modal-body" style="font-size: 0.85rem; line-height: 1.6; color: var(--text-sub);">
+            <div style="text-align: center; margin-bottom: 12px;">
+                <div style="font-size: 1.3rem; font-weight: 800; color: #fff;">Smart Device BLE Web Controller</div>
+                <div style="font-size: 0.8rem; color: var(--accent); font-weight: 600;">Version 2.5 (Verified RF Engine)</div>
+            </div>
+
+            <div style="background: #0d0d14; border: 1px solid var(--border); border-radius: 10px; padding: 12px;">
+                <div style="font-size: 0.82rem; font-weight: 700; color: #fff; margin-bottom: 6px;">Hardware Protocol Details</div>
+                <ul style="padding-left: 18px; font-size: 0.78rem; color: var(--text-sub);">
+                    <li><b>Device Compatibility:</b> Love Spouse 2.4GHz BLE Broadcast toys (Model 4789 / "My Device")</li>
+                    <li><b>Company ID:</b> <code>0x00FF</code> (255)</li>
+                    <li><b>Prefix (11 Bytes):</b> <code>0000006db643ce97fe427c</code></li>
+                    <li><b>Commands (3 Bytes):</b> Continuous Shake, Pulse Shock, Telescopic (Levels 0-9)</li>
+                    <li><b>Transmission Radio:</b> Windows WinRT BLE Broadcaster (no pairing required)</li>
+                </ul>
+            </div>
+
+            <p style="margin-top: 6px;">
+                Designed for ultra-low latency direct hardware control from any phone or laptop on your local Wi-Fi or over the secure worldwide Cloudflare tunnel.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" style="padding: 8px 18px; font-size: 0.85rem;" onclick="closeModal('aboutModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Host Selfie Window (Camera Preview & Framing for Host) -->
+<div id="hostSelfieWindow" class="floating-video-card" style="display: none;">
+    <div class="floating-video-header" id="hostSelfieHeader">
+        <div class="floating-video-title">
+            <span>📹 Your Camera</span>
+        </div>
+        <div class="floating-video-actions">
+            <button class="floating-action-btn" title="Flip Camera" onclick="flipHostCamera()">🔄</button>
+            <button class="floating-action-btn" id="hostSelfieToggleBtn" title="Minimize/Expand" onclick="toggleFloatingCard('hostSelfieWindow', 'hostSelfieToggleBtn')">−</button>
+            <button class="floating-action-btn" title="Hide Camera Mirror (Can re-enable in Settings)" onclick="toggleCameraMirrorSetting(false)">✕</button>
+        </div>
+    </div>
+    <div class="floating-video-body" style="min-height: 140px; background: #000;">
+        <video id="hostSelfieVideo" autoplay muted playsinline webkit-playsinline style="width: 100%; height: auto; min-height: 140px; display: block; transform: scaleX(-1); object-fit: cover; background: #000;"></video>
+    </div>
+    <div class="floating-video-footer">
+        <span style="color: #00e676; font-weight: 600;">🔴 Live Streaming</span>
+        <span>Drag to move</span>
+    </div>
+</div>
+
+<!-- Floating Partner Live Video Window (Watching & Listening for Partner) -->
+<div id="partnerVideoWindow" class="floating-video-card" style="display: none;">
+    <div class="floating-video-header" id="partnerVideoHeader">
+        <div class="floating-video-title">
+            <span>🔴 Partner Cam Feed</span>
+        </div>
+        <div class="floating-video-actions">
+            <button class="floating-action-btn" title="Toggle Fullscreen" onclick="toggleVideoFullscreen('remotePartnerVideo')">⛶</button>
+            <button class="floating-action-btn" id="partnerVideoToggleBtn" title="Minimize/Expand" onclick="toggleFloatingCard('partnerVideoWindow', 'partnerVideoToggleBtn')">−</button>
+        </div>
+    </div>
+    <div class="floating-video-body" style="position: relative; min-height: 180px; background: #000;">
+        <video id="remotePartnerVideo" autoplay muted playsinline webkit-playsinline style="width: 100%; height: auto; min-height: 180px; display: block; object-fit: cover; background: #000;"></video>
+        <div id="partnerUnmutePrompt" style="display: none; position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: rgba(255, 64, 129, 0.92); border-radius: 20px; padding: 6px 14px; cursor: pointer; color: #fff; font-size: 0.78rem; font-weight: bold; text-align: center; z-index: 10; box-shadow: 0 4px 14px rgba(0,0,0,0.6); white-space: nowrap; align-items: center; gap: 6px;" onclick="unmutePartnerAudio()">
+            <span>🔊 Tap for Sound</span>
+        </div>
+    </div>
+    <div class="floating-video-footer">
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <span id="partnerVolIcon" style="cursor: pointer;" onclick="togglePartnerMute()">🔊</span>
+            <input type="range" id="partnerVolSlider" min="0" max="1" step="0.05" value="1" style="width: 65px; accent-color: var(--accent); cursor: pointer;" oninput="setPartnerVolume(this.value)">
+        </div>
+        <span>Drag to reposition</span>
+    </div>
+</div>
+
+<div class="container">
+    <header style="position: relative; display: flex; flex-direction: column; align-items: center;">
+        <button id="hamburgerBtn" class="hamburger-btn" aria-label="Open Navigation Menu" onclick="toggleDrawer(true)">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <h1>Smart Device BLE Controller</h1>
+        <p>Love Spouse 2.4G Broadcast & BLE Controller (100% Verified Engine)</p>
+    </header>
+
+    <!-- Transmission Mode Banner -->
+    <div id="modeBanner" class="mode-banner">
+        <span id="bannerText">Checking Server Connection...</span>
+        <span id="winsdkPill" style="font-weight: 600;"></span>
+    </div>
+
+    <!-- Quick Speeds & Emergency Controls -->
+    <div class="card">
+        <div class="card-title">
+            <span>Pattern Mode</span>
+            <div id="statusBadge" class="status-badge">
+                <span class="status-dot"></span>
+                <span id="statusText">Ready to Broadcast</span>
+            </div>
+        </div>
+
+        <div class="pill-group">
+            <div class="pill-btn active" id="btnShake" onclick="setMode('shake')">Continuous Shake</div>
+            <div class="pill-btn" id="btnShock" onclick="setMode('shock')">Pulse Shock</div>
+            <div class="pill-btn" id="btnTelescopic" onclick="setMode('telescopic')">Telescopic</div>
+        </div>
+
+        <div class="preset-grid" style="margin-top: 6px;">
+            <button class="btn" style="background: linear-gradient(145deg, #00c853, #009624);" onclick="setSpeed(1)">🟢 Speed 1 (Whisper)</button>
+            <button class="btn" style="background: linear-gradient(145deg, #ff9100, #ff6d00);" onclick="setSpeed(4)">🟡 Speed 2 (Med)</button>
+            <button class="btn" style="background: linear-gradient(145deg, #e91e63, #c2185b);" onclick="setSpeed(7)">🔴 Speed 3 (High)</button>
+            <button id="emergencyStopBtn" class="btn btn-danger" onclick="stopAll(true)">🛑 STOP</button>
+        </div>
+    </div>
+
+    <!-- Intensity & Sliders -->
+    <div class="card">
+        <div class="card-title">Intensity & Motor Control</div>
+        
+        <!-- Slider 1: Intensity -->
+        <div class="slider-group">
+            <div class="slider-header">
+                <span>Intensity (0 - 9)</span>
+                <span id="speedValue" class="slider-val">0</span>
+            </div>
+            <input type="range" id="speedSlider" min="0" max="9" value="0" oninput="onIntensityChange(this.value)">
+        </div>
+
+        <!-- Slider 2: Motor Control -->
+        <div class="slider-group" style="margin-top: 14px;">
+            <div class="slider-header">
+                <span>Motor Control (0 - 9)</span>
+                <span id="motorValue" class="slider-val">0</span>
+            </div>
+            <input type="range" id="motorSlider" min="0" max="9" value="0" oninput="onMotorChange(this.value)">
+        </div>
+    </div>
+
+    <!-- Rhythm Presets -->
+    <div class="card">
+        <div class="card-title">Classic Vibration Rhythms</div>
+        <div class="preset-grid-patterns">
+            <button class="preset-btn" onclick="startPreset('constant')">Steady</button>
+            <button class="preset-btn" onclick="startPreset('pulse')">Pulse</button>
+            <button class="preset-btn" onclick="startPreset('wave')">Wave</button>
+            <button class="preset-btn" onclick="startPreset('escalate')">Escalate</button>
+            <button class="preset-btn" onclick="startPreset('heartbeat')">Heartbeat</button>
+            <button class="preset-btn" onclick="startPreset('random')">Random</button>
+        </div>
+
+        <div id="advancedSensationsSection" class="advanced-feature">
+            <div class="card-title" style="margin-top: 18px; margin-bottom: 12px; font-size: 0.95rem; color: #ff80ab;">
+                ✨ Advanced Specialty Sensations
+            </div>
+            <div class="preset-grid-patterns">
+                <button class="preset-btn" style="border-color: rgba(255, 64, 129, 0.4);" onclick="startPreset('climax')">🌊 Climax Ramp</button>
+                <button class="preset-btn" style="border-color: rgba(255, 64, 129, 0.4);" onclick="startPreset('edging')">😈 Tease & Denial</button>
+                <button class="preset-btn" style="border-color: rgba(255, 64, 129, 0.4);" onclick="startPreset('staccato')">⚡ Machine Gun</button>
+                <button class="preset-btn" style="border-color: rgba(255, 64, 129, 0.4);" onclick="startPreset('breathing')">🫀 Respiration</button>
+                <button class="preset-btn" style="border-color: rgba(255, 64, 129, 0.4);" onclick="startPreset('earthquake')">🌋 Earthquake</button>
+                <button class="preset-btn" style="border-color: rgba(255, 64, 129, 0.4);" onclick="startPreset('roulette')">🎲 Roulette Mode</button>
+            </div>
+            <div id="rouletteBanner" style="display: none; margin-top: 12px; padding: 10px; background: rgba(255, 64, 129, 0.15); border: 1px solid var(--accent); border-radius: 10px; text-align: center; font-size: 0.85rem; color: #ff80ab;">
+                🎲 <span id="rouletteText">Spinning Surprise Roulette...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roulette & Dare Game Card -->
+    <div class="card advanced-feature" id="rouletteCard">
+        <div class="card-title">
+            <span>🎲 Roulette & Dare Challenge</span>
+            <span id="rouletteStatusBadge" class="status-badge" style="background: rgba(255, 179, 0, 0.15); color: var(--warning); border-color: rgba(255, 179, 0, 0.3);">
+                <span class="status-dot"></span>
+                <span id="rouletteStatusText">Ready to Spin</span>
+            </span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 12px;">
+            Spin the roulette wheel to challenge yourself or your partner with randomized speeds and surprise countdowns!
+        </p>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+            <button id="spinRouletteBtn" class="btn" style="flex: 1; background: linear-gradient(135deg, #ff9100, #ff4081);" onclick="spinRoulette()">
+                🎰 Spin the Roulette Wheel
+            </button>
+            <button class="btn" style="background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-main);" onclick="stopRoulette()">
+                Stop
+            </button>
+        </div>
+
+        <div id="rouletteDisplayBox" style="background: #0d0d14; border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center;">
+            <div id="rouletteSpeedDial" style="font-size: 2.2rem; font-weight: 900; background: linear-gradient(135deg, #ff4081, #ff9100); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                ?
+            </div>
+            <div id="rouletteTimerDial" style="font-size: 1.1rem; font-weight: 700; color: #fff; margin: 4px 0;">
+                Press Spin to Begin
+            </div>
+            <div id="rouletteDareText" style="font-size: 0.85rem; color: #ff80ab; font-style: italic;">
+                "Are you ready for a surprise?"
+            </div>
+        </div>
+    </div>
+
+    <!-- Video & Funscript Sync Card -->
+    <div class="card advanced-feature" id="videoSyncCard">
+        <div class="card-title">
+            <span>🎬 Movie / Video Sync (.funscript Player)</span>
+            <span id="videoStatusBadge" class="status-badge" style="background: rgba(0, 230, 118, 0.15); color: var(--success); border-color: rgba(0, 230, 118, 0.3);">
+                <span class="status-dot"></span>
+                <span id="videoStatusText">No Video Loaded</span>
+            </span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 12px;">
+            Load any video file and a matching <b>.funscript</b> file. The toy will automatically vibrate in exact millisecond synchronization with the video scenes!
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+            <label class="btn" style="background: var(--bg-card-hover); border: 1px solid var(--border); font-size: 0.85rem; cursor: pointer; text-align: center;">
+                🎥 1. Choose Video
+                <input type="file" id="videoFileInput" accept="video/*" style="display: none;" onchange="loadVideoFile(this)">
+            </label>
+            <label class="btn" style="background: var(--bg-card-hover); border: 1px solid var(--border); font-size: 0.85rem; cursor: pointer; text-align: center;">
+                📜 2. Choose .funscript
+                <input type="file" id="funscriptFileInput" accept=".funscript,.json" style="display: none;" onchange="loadFunscriptFile(this)">
+            </label>
+        </div>
+
+        <!-- Video Player -->
+        <div style="background: #000; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); position: relative;">
+            <video id="syncVideoPlayer" controls style="width: 100%; max-height: 280px; display: block;"></video>
+        </div>
+
+        <!-- Sync Progress & Live Funscript Level Bar -->
+        <div style="margin-top: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-sub); margin-bottom: 4px;">
+                <span id="funscriptInfo">Script: None Loaded (or use Demo Test Script)</span>
+                <span id="funscriptSyncLevel" style="font-weight: 800; color: var(--accent);">Sync: Speed 0</span>
+            </div>
+            <div class="vu-meter-bar-container">
+                <div id="funscriptFill" class="vu-meter-fill"></div>
+            </div>
+        </div>
+
+        <button class="btn" style="width: 100%; margin-top: 12px; background: var(--bg-card-hover); border: 1px solid var(--border); font-size: 0.82rem;" onclick="loadDemoFunscript()">
+            ⚡ Load Demo Sync Pattern for any Video
+        </button>
+    </div>
+
+    <!-- Long-Distance Partner Control Card -->
+    <div class="card advanced-feature" id="partnerCard">
+        <div class="card-title">
+            <span>🌐 Long-Distance Partner Control</span>
+            <span id="partnerStatusBadge" class="status-badge" style="background: rgba(124, 77, 255, 0.15); color: var(--accent-secondary); border-color: rgba(124, 77, 255, 0.3);">
+                <span class="status-dot"></span>
+                <span id="partnerStatusText">Offline</span>
+            </span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 12px;">
+            Generate a private room link to share with a partner anywhere in the world. When they move the controls on their phone, your toy vibrates live with zero lag!
+        </p>
+
+        <!-- Host Section -->
+        <div id="hostSection">
+            <button id="createRoomBtn" class="btn" style="width: 100%; background: linear-gradient(135deg, #7c4dff, #ff4081);" onclick="createPartnerRoom()">
+                🌐 Create Partner Room & Share Link
+            </button>
+            <div id="roomInfoBox" style="display: none; margin-top: 12px; background: #0d0d14; border: 1px solid var(--border); border-radius: 12px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 0.85rem; color: var(--text-sub);">Secret Room Code:</span>
+                    <span id="partnerRoomCode" style="font-size: 1.3rem; font-weight: 900; color: #00e676; letter-spacing: 2px;">------</span>
+                </div>
+                
+                <div style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 6px;">
+                    🔗 Worldwide Invite Link (Works on any 4G/5G/WiFi network):
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="partnerShareInput" readonly style="flex: 1; background: #16161e; border: 1px solid var(--border); color: #00e676; padding: 10px; border-radius: 8px; font-size: 0.85rem; font-family: monospace; outline: none;" onclick="this.select()">
+                    <button id="copyLinkBtn" class="btn" style="padding: 10px 16px; font-size: 0.85rem; white-space: nowrap;" onclick="copyPartnerLink()">📋 Copy Link</button>
+                </div>
+                
+                <p style="font-size: 0.78rem; color: #9e9eb3; margin-top: 10px; line-height: 1.4;">
+                    💡 <strong>How it works:</strong> Send this link to your partner on any device. When they open it, their screen connects directly to your toy live over the internet!
+                </p>
+            </div>
+        </div>
+
+        <!-- Join / Remote Controller Section (For the Partner) -->
+        <div id="joinSection" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);">
+            <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--text-sub);">
+                Or Connect to a Partner's Room:
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="joinRoomCodeInput" placeholder="Enter Room Code" style="flex: 1; background: var(--bg-card-hover); border: 1px solid var(--border); color: #fff; padding: 10px 12px; border-radius: 10px; font-weight: bold; text-transform: uppercase;">
+                <button class="btn" style="padding: 10px 16px; font-size: 0.85rem;" onclick="joinPartnerRoom()">Connect</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Touch Pad -->
+    <div class="card">
+        <div class="card-title">
+            <span>Interactive Touch Pad (Swipe Control)</span>
+            <label style="font-size: 0.8rem; font-weight: normal; color: var(--text-sub); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="holdToVibrateToggle" checked style="accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer;">
+                <span>Stop on release</span>
+            </label>
+        </div>
+        <div id="touchPad">
+            <!-- Top label: High speed -->
+            <div class="pad-zone top-zone">▲ HIGH SPEED (Level 9 - Max Power)</div>
+            
+            <!-- Level scale markers along the side -->
+            <div class="pad-scale">
+                <span class="pad-tick">9</span>
+                <span class="pad-tick">8</span>
+                <span class="pad-tick">7</span>
+                <span class="pad-tick">6</span>
+                <span class="pad-tick">5</span>
+                <span class="pad-tick">4</span>
+                <span class="pad-tick">3</span>
+                <span class="pad-tick">2</span>
+                <span class="pad-tick">1</span>
+                <span class="pad-tick">0</span>
+            </div>
+
+            <!-- Bottom label: Low speed / Off -->
+            <div class="pad-zone bottom-zone">▼ LOW SPEED / OFF (Level 0 - Idle)</div>
+
+            <!-- Floating Indicator & Live Level Tooltip -->
+            <div id="touchIndicator">
+                <div id="touchLevelBadge">OFF (0)</div>
+            </div>
+            
+            <div id="touchHint" class="touch-hint">
+                ▲ Slide <b>UP</b> for High Speed<br>
+                ▼ Slide <b>DOWN</b> for Low Speed
+            </div>
+        </div>
+    </div>
+
+        <!-- Sound & Music Reactive Mode -->
+    <div class="card advanced-feature" id="soundCard">
+        <div class="card-title">
+            <span style="display: flex; align-items: center; gap: 8px;">
+                <span>🎵 Sound & Music Reactive Mode</span>
+            </span>
+            <span id="soundStatusBadge" class="status-badge" style="background: rgba(124, 77, 255, 0.15); color: var(--accent-secondary); border-color: rgba(124, 77, 255, 0.3);">
+                <span class="status-dot"></span>
+                <span id="soundStatusText">Mic Inactive</span>
+            </span>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 14px;">
+            <button id="soundToggleBtn" class="btn" style="flex: 1; background: linear-gradient(135deg, #7c4dff, #ff4081);" onclick="toggleSoundControl()">
+                🎙️ Start Sound Control
+            </button>
+        </div>
+
+        <!-- Mode selector: Volume vs Beat -->
+        <div class="pill-group" style="grid-template-columns: 1fr 1fr; margin-bottom: 12px;">
+            <div class="pill-btn active" id="btnAudioVol" onclick="setAudioMode('volume')">🔊 Volume & Dialogue</div>
+            <div class="pill-btn" id="btnAudioBass" onclick="setAudioMode('bass')">🥁 Bass & Drum Beats</div>
+        </div>
+
+        <!-- Live Spectrum & VU Meter -->
+        <div class="sound-visualizer-box">
+            <div class="vu-meter-bar-container">
+                <div id="vuMeterFill" class="vu-meter-fill"></div>
+            </div>
+            <div class="vu-meter-footer">
+                <span id="audioLevelText">Input Volume: 0%</span>
+                <span id="audioTargetSpeed" style="font-weight: 800; color: var(--accent);">Target: Speed 0 (Off)</span>
+            </div>
+        </div>
+
+        <!-- Sensitivity & Threshold Sliders -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div>
+                <div class="slider-header" style="font-size: 0.82rem;">
+                    <span>Sensitivity</span>
+                    <span id="sensVal" style="color: var(--accent); font-weight: bold;">2.5x</span>
+                </div>
+                <input type="range" id="sensSlider" min="0.5" max="5.0" step="0.1" value="2.5" oninput="document.getElementById('sensVal').innerText = this.value + 'x'">
+            </div>
+            <div>
+                <div class="slider-header" style="font-size: 0.82rem;">
+                    <span>Noise Gate</span>
+                    <span id="gateVal" style="color: var(--accent); font-weight: bold;">15%</span>
+                </div>
+                <input type="range" id="gateSlider" min="0" max="40" step="1" value="15" oninput="document.getElementById('gateVal').innerText = this.value + '%'">
+            </div>
+        </div>
+        
+        <div id="micHelpNotice" style="margin-top: 10px; font-size: 0.78rem; color: var(--text-sub); display: none;">
+            ℹ️ If prompted, tap <b>Allow</b> for microphone access. (Works on localhost or when Chrome mic permission is granted).
+        </div>
+    </div>
+
+        <!-- Phone Motion & Tilt Control Card -->
+    <div class="card advanced-feature" id="motionCard">
+        <div class="card-title">
+            <span>📱 Phone Motion & Tilt Control</span>
+            <span id="motionStatusBadge" class="status-badge" style="background: rgba(124, 77, 255, 0.15); color: var(--accent-secondary); border-color: rgba(124, 77, 255, 0.3);">
+                <span class="status-dot"></span>
+                <span id="motionStatusText">Inactive</span>
+            </span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 12px;">
+            Tilt your phone forward/backward to adjust speed live. Shake your phone for an instant power surge!
+        </p>
+        <button id="motionToggleBtn" class="btn" style="width: 100%; background: linear-gradient(135deg, #7c4dff, #ff4081);" onclick="toggleMotionControl()">
+            📱 Enable Tilt & Shake Control
+        </button>
+
+        <div class="tilt-meter-container" style="margin-top: 14px;">
+            <div id="tiltMeterFill" class="tilt-meter-fill"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-sub);">
+            <span id="tiltAngleText">Tilt Angle: 0°</span>
+            <span id="tiltSpeedText">Speed: 0</span>
+        </div>
+    </div>
+
+    <!-- Custom Pattern Sequencer Card -->
+    <div class="card advanced-feature" id="sequencerCard">
+        <div class="card-title">
+            <span>🎛️ Custom Pattern Sequencer (Beat Maker)</span>
+            <span id="seqStatusBadge" class="status-badge" style="background: rgba(124, 77, 255, 0.15); color: var(--accent-secondary); border-color: rgba(124, 77, 255, 0.3);">
+                <span class="status-dot"></span>
+                <span id="seqStatusText">Stopped</span>
+            </span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-sub);">
+            Tap any step to adjust its power level (0 to 9), then press Play to loop your custom rhythm!
+        </p>
+
+        <!-- 8-Step Grid -->
+        <div class="sequencer-container" id="seqContainer">
+            <!-- 8 Steps will be rendered by JS -->
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+            <button id="seqPlayBtn" class="btn" style="flex: 1; background: linear-gradient(135deg, #00c853, #009624);" onclick="toggleSequencer()">
+                ▶ Play Loop
+            </button>
+            <button class="btn" style="background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-main); font-size: 0.8rem; padding: 12px 14px;" onclick="randomizeSequencer()">
+                🔀 Randomize
+            </button>
+            <button class="btn" style="background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-main); font-size: 0.8rem; padding: 12px 14px;" onclick="clearSequencer()">
+                Clear
+            </button>
+        </div>
+
+        <div style="margin-top: 14px;">
+            <div class="slider-header" style="font-size: 0.82rem;">
+                <span>Loop Speed (Step Duration)</span>
+                <span id="seqTempoVal" style="color: var(--accent); font-weight: bold;">250ms</span>
+            </div>
+            <input type="range" id="seqTempoSlider" min="100" max="600" step="25" value="250" oninput="document.getElementById('seqTempoVal').innerText = this.value + 'ms'">
+        </div>
+    </div>
+
+    <!-- Log Console (Minimized by Default) -->
+    <div class="card" id="logCard">
+        <div class="card-title" id="logCardTitle" style="cursor: pointer; user-select: none; margin-bottom: 0px;" onclick="toggleLogCollapse()">
+            <span style="display: inline-flex; align-items: center; gap: 8px;">
+                <button id="logToggleBtn" class="btn" style="padding: 2px 9px; font-size: 0.95rem; font-weight: 800; min-width: 28px; height: 26px; background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-main); line-height: 1;" onclick="event.stopPropagation(); toggleLogCollapse();">+</button>
+                <span>Transmission Log</span>
+            </span>
+            <button class="btn" style="padding: 4px 10px; font-size: 0.75rem; background: transparent; border: 1px solid var(--border);" onclick="event.stopPropagation(); clearLogs();">Clear</button>
+        </div>
+        <div id="logBox" class="log-box" style="display: none;"></div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = (window.location.protocol === "http:" || window.location.protocol === "https:") ? "" : "http://127.0.0.1:8000";
+    let currentMode = "shake";
+    let currentSpeed = 0;
+    let presetTimer = null;
+    let activePreset = null;
+
+    function log(msg, type = "normal") {
+        const logBox = document.getElementById("logBox");
+        const entry = document.createElement("div");
+        entry.className = `log-entry ${type}`;
+        const time = new Date().toLocaleTimeString();
+        entry.innerText = `[${time}] ${msg}`;
+        logBox.prepend(entry);
+    }
+
+    
+    function toggleLogCollapse() {
+        const box = document.getElementById("logBox");
+        const btn = document.getElementById("logToggleBtn");
+        const title = document.getElementById("logCardTitle");
+        if (box.style.display === "none") {
+            box.style.display = "flex";
+            btn.innerText = "−";
+            title.style.marginBottom = "14px";
+        } else {
+            box.style.display = "none";
+            btn.innerText = "+";
+            title.style.marginBottom = "0px";
+        }
+    }
+
+    function clearLogs() {
+        document.getElementById("logBox").innerHTML = "";
+    }
+
+    // Ping server status
+    async function checkServerStatus() {
+        if (window.AndroidBLE) {
+            document.getElementById("bannerText").innerText = "Native Android BLE Radio Active";
+            document.getElementById("winsdkPill").innerText = "✔ Android BLE Direct";
+            document.getElementById("modeBanner").style.background = "rgba(0, 230, 118, 0.1)";
+            document.getElementById("modeBanner").style.borderColor = "rgba(0, 230, 118, 0.35)";
+            document.getElementById("modeBanner").style.color = "#b9f6ca";
+            document.getElementById("statusText").innerText = "Ready to Broadcast";
+            return;
+        }
+        try {
+            const resp = await fetch(API_BASE + '/api/status');
+            const data = await resp.json();
+            if (data && (data.status === "running" || data.has_ble !== undefined)) {
+                window.PUBLIC_TUNNEL_URL = data.public_url || "";
+                const hostName = data.public_url ? "Cloudflare Worldwide HTTPS" : (data.local_ip || "Laptop");
+                document.getElementById("bannerText").innerText = `BLE Relay Active (Broadcasting via ${hostName})`;
+                document.getElementById("winsdkPill").innerText = "✔ Bluetooth Online";
+                document.getElementById("modeBanner").style.background = "rgba(0, 230, 118, 0.1)";
+                document.getElementById("modeBanner").style.borderColor = "rgba(0, 230, 118, 0.35)";
+                document.getElementById("modeBanner").style.color = "#b9f6ca";
+                document.getElementById("statusText").innerText = data.is_broadcasting ? "Broadcasting..." : "Ready to Broadcast";
+
+                // Update Drawer and Modal diagnostics
+                const drawerStatus = document.getElementById("drawerStatusText");
+                if (drawerStatus) {
+                    drawerStatus.innerText = data.is_broadcasting ? "● Broadcasting..." : "● Online";
+                    drawerStatus.style.color = "var(--success)";
+                }
+                const diagIp = document.getElementById("diagLocalIp");
+                if (diagIp) diagIp.innerText = data.local_ip || "127.0.0.1";
+                const diagTunnel = document.getElementById("diagPublicTunnel");
+                if (diagTunnel) {
+                    diagTunnel.innerText = data.public_url ? data.public_url : "Local Only";
+                    diagTunnel.style.color = data.public_url ? "#00e676" : "#ffb300";
+                }
+                return;
+            }
+        } catch (_) {}
+
+        document.getElementById("bannerText").innerText = "⚠ Server Disconnected on Port 8000";
+        document.getElementById("winsdkPill").innerText = "[Offline]";
+        document.getElementById("modeBanner").style.background = "rgba(255, 23, 68, 0.15)";
+        document.getElementById("modeBanner").style.borderColor = "rgba(255, 23, 68, 0.35)";
+        document.getElementById("modeBanner").style.color = "#ff8a80";
+
+        const drawerStatus = document.getElementById("drawerStatusText");
+        if (drawerStatus) {
+            drawerStatus.innerText = "● Disconnected";
+            drawerStatus.style.color = "var(--danger)";
+        }
+    }
+
+    setInterval(checkServerStatus, 3000);
+    checkServerStatus();
+
+    // -------------------------------------------------------------
+    // Navigation Drawer & Menu Control
+    // -------------------------------------------------------------
+    function toggleDrawer(open = null) {
+        const drawer = document.getElementById("sideDrawer");
+        const backdrop = document.getElementById("drawerBackdrop");
+        if (!drawer || !backdrop) return;
+
+        const shouldOpen = open !== null ? open : !drawer.classList.contains("active");
+        if (shouldOpen) {
+            drawer.classList.add("active");
+            backdrop.classList.add("active");
+            document.body.style.overflow = "hidden";
+        } else {
+            drawer.classList.remove("active");
+            backdrop.classList.remove("active");
+            document.body.style.overflow = "";
+        }
+    }
+
+    function navigateHome(e) {
+        if (e) e.preventDefault();
+        toggleDrawer(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // -------------------------------------------------------------
+    // Advance Features Toggle
+    // -------------------------------------------------------------
+    function onAdvancedToggleChange(enable) {
+        localStorage.setItem("ls_advanced_toggle", enable ? "true" : "false");
+        const advElements = document.querySelectorAll(".advanced-feature");
+        advElements.forEach(el => {
+            if (enable) {
+                el.classList.remove("hidden-mode");
+            } else {
+                el.classList.add("hidden-mode");
+            }
+        });
+
+        const subtext = document.getElementById("advToggleSubtext");
+        if (subtext) {
+            subtext.innerText = enable ? "Advanced cards visible on Home" : "Core essentials only (Clean mode)";
+        }
+
+        // Safely stop any running background advanced tasks if turned off
+        if (!enable) {
+            if (typeof isSoundActive !== 'undefined' && isSoundActive) stopSoundControl();
+            if (typeof isMotionActive !== 'undefined' && isMotionActive) stopMotionControl();
+            if (typeof isSeqRunning !== 'undefined' && isSeqRunning) stopSequencer();
+            const rBanner = document.getElementById("rouletteBanner");
+            if (rBanner) rBanner.style.display = "none";
+        }
+    }
+
+    function initAdvancedToggle() {
+        const saved = localStorage.getItem("ls_advanced_toggle");
+        // Default to true so all options are initially accessible
+        const isAdv = saved === null ? true : saved === "true";
+        const chk = document.getElementById("advancedToggleCheckbox");
+        if (chk) chk.checked = isAdv;
+        onAdvancedToggleChange(isAdv);
+    }
+
+    // -------------------------------------------------------------
+    // Modals (Settings & About)
+    // -------------------------------------------------------------
+    function openSettingsModal(e) {
+        if (e) e.preventDefault();
+        toggleDrawer(false);
+        const m = document.getElementById("settingsModal");
+        if (m) m.classList.add("active");
+    }
+
+    function openAboutModal(e) {
+        if (e) e.preventDefault();
+        toggleDrawer(false);
+        const m = document.getElementById("aboutModal");
+        if (m) m.classList.add("active");
+    }
+
+    function closeModal(modalId) {
+        const m = document.getElementById(modalId);
+        if (m) m.classList.remove("active");
+    }
+
+    function closeModalOnBackdrop(e, modalId) {
+        if (e.target && e.target.id === modalId) {
+            closeModal(modalId);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Settings Preferences
+    // -------------------------------------------------------------
+    let hapticsEnabled = true;
+    let wakeLockSentinel = null;
+
+    function saveSettingDefaultMode(val) {
+        localStorage.setItem("ls_default_mode", val);
+        setMode(val);
+        log(`Default mode set to: ${val.toUpperCase()}`, "info");
+    }
+
+    function toggleHaptics(enable) {
+        hapticsEnabled = enable;
+        localStorage.setItem("ls_haptics", enable ? "true" : "false");
+    }
+
+    function triggerHapticFeedback(pattern = [25]) {
+        if (hapticsEnabled && navigator.vibrate) {
+            try { navigator.vibrate(pattern); } catch (_) {}
+        }
+    }
+
+    async function toggleWakeLock(enable) {
+        localStorage.setItem("ls_wakelock", enable ? "true" : "false");
+        if (enable) {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLockSentinel = await navigator.wakeLock.request('screen');
+                    log("Screen WakeLock active (Display will stay on)", "info");
+                } catch (err) {
+                    log(`WakeLock error: ${err.message}`, "info");
+                }
+            }
+        } else {
+            if (wakeLockSentinel) {
+                try { await wakeLockSentinel.release(); } catch (_) {}
+                wakeLockSentinel = null;
+                log("Screen WakeLock released", "info");
+            }
+        }
+    }
+
+    function toggleCameraMirrorSetting(enable) {
+        localStorage.setItem("ls_show_camera_mirror", enable ? "true" : "false");
+        const chk = document.getElementById("settingCameraMirror");
+        if (chk) chk.checked = enable;
+        const selfieCard = document.getElementById("hostSelfieWindow");
+        if (selfieCard) {
+            if (!enable) {
+                selfieCard.style.display = "none";
+                showToast("Camera mirror hidden.");
+            } else if (localHostMediaStream) {
+                selfieCard.style.display = "flex";
+                showToast("Camera mirror visible.");
+            } else {
+                showToast("Camera mirror enabled (will show when room is active).");
+            }
+        }
+        log(`Camera Mirror Preview: ${enable ? "Visible" : "Hidden"}`, "info");
+    }
+
+    // Initial load for preferences
+    window.addEventListener("DOMContentLoaded", () => {
+        initAdvancedToggle();
+        const savedMode = localStorage.getItem("ls_default_mode");
+        if (savedMode && ["shake", "shock", "telescopic"].includes(savedMode)) {
+            const sel = document.getElementById("settingDefaultMode");
+            if (sel) sel.value = savedMode;
+            setMode(savedMode);
+        }
+        const savedHaptics = localStorage.getItem("ls_haptics");
+        if (savedHaptics !== null) {
+            hapticsEnabled = savedHaptics === "true";
+            const chk = document.getElementById("settingHaptics");
+            if (chk) chk.checked = hapticsEnabled;
+        }
+        const savedMirror = localStorage.getItem("ls_show_camera_mirror");
+        const mirrorChk = document.getElementById("settingCameraMirror");
+        if (savedMirror !== null) {
+            const isMirrorOn = savedMirror === "true";
+            if (mirrorChk) mirrorChk.checked = isMirrorOn;
+        } else {
+            if (mirrorChk) mirrorChk.checked = false;
+        }
+    });
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById("btnShake").classList.toggle("active", mode === "shake");
+        document.getElementById("btnShock").classList.toggle("active", mode === "shock");
+        document.getElementById("btnTelescopic").classList.toggle("active", mode === "telescopic");
+        log(`Switched pattern mode to: ${mode.toUpperCase()}`, "info");
+        if (currentSpeed > 0) {
+            sendCommand(currentSpeed);
+        }
+    }
+
+    // Command Dispatcher
+    async function sendCommand(speed, customMode = null) {
+        const modeToSend = customMode || currentMode;
+
+        // Direct Native Android BLE support when running inside Android App
+        if (window.AndroidBLE && window.AndroidBLE.sendCommand) {
+            try {
+                window.AndroidBLE.sendCommand(speed, modeToSend);
+                if (speed === 0) {
+                    log("⏹️ Sent STOP command (Native BLE)", "tx");
+                } else {
+                    log(`📡 Native BLE Broadcaster | Mode: ${modeToSend.toUpperCase()} | Speed: ${speed}`, "tx");
+                }
+            } catch (err) {
+                log(`Android BLE error: ${err.message}`, "error");
+            }
+            return;
+        }
+
+        try {
+            const resp = await fetch(API_BASE + `/api/control?speed=${speed}&mode=${modeToSend}`);
+            const data = await resp.json();
+            if (data.success) {
+                if (speed === 0) {
+                    log("⏹️ Sent STOP command", "tx");
+                } else {
+                    log(`📡 ${data.message} | Mode: ${currentMode.toUpperCase()} | Speed: ${speed}`, "tx");
+                }
+            } else {
+                log(`Broadcast Error: ${data.message}`, "error");
+            }
+        } catch (err) {
+            log(`Server communication failed: ${err.message}`, "error");
+        }
+    }
+
+    let currentMotorSpeed = 0;
+
+    function setSpeed(spd) {
+        triggerHapticFeedback([30]);
+        stopPreset();
+        currentSpeed = parseInt(spd, 10);
+        document.getElementById("speedSlider").value = currentSpeed;
+        document.getElementById("speedValue").innerText = currentSpeed;
+        // Independent: does NOT move motorSlider
+        sendCommand(currentSpeed);
+    }
+
+    function onIntensityChange(val) {
+        stopPreset();
+        currentSpeed = parseInt(val, 10);
+        document.getElementById("speedValue").innerText = currentSpeed;
+        // Independent: does NOT move motorSlider
+        sendCommand(currentSpeed);
+    }
+
+    function onMotorChange(val) {
+        stopPreset();
+        currentMotorSpeed = parseInt(val, 10);
+        document.getElementById("motorValue").innerText = currentMotorSpeed;
+        // Independent: does NOT move speedSlider (Intensity)
+        sendCommand(currentMotorSpeed, "telescopic");
+    }
+
+    function onSpeedChange(val) {
+        onIntensityChange(val);
+    }
+
+    async function stopAll(manual = false) {
+        triggerHapticFeedback([60, 40, 60]);
+        if (typeof isMotionActive !== "undefined" && isMotionActive && manual) stopMotionControl();
+        if (typeof isSeqRunning !== "undefined" && isSeqRunning) stopSequencer();
+        if (isSoundActive) stopSoundControl();
+        stopPreset();
+        currentSpeed = 0;
+        currentMotorSpeed = 0;
+        document.getElementById("speedSlider").value = 0;
+        document.getElementById("speedValue").innerText = "0";
+        if (document.getElementById("motorSlider")) {
+            document.getElementById("motorSlider").value = 0;
+            document.getElementById("motorValue").innerText = "0";
+        }
+
+        const indicator = document.getElementById("touchIndicator");
+        if (indicator) indicator.style.display = "none";
+
+        // Dispatch immediate STOP commands over both API channels
+        try {
+            await Promise.all([
+                fetch(API_BASE + `/api/control?speed=0&mode=${currentMode}`),
+                fetch(API_BASE + '/api/stop')
+            ]);
+        } catch (_) {}
+
+        // Notify partner that vibration stopped while KEEPING the P2P room connection 100% active!
+        if (typeof partnerConn !== "undefined" && partnerConn && partnerConn.open) {
+            try { partnerConn.send({ action: "stop", speed: 0 }); } catch (_) {}
+        }
+        if (typeof partnerClientConn !== "undefined" && partnerClientConn && partnerClientConn.open) {
+            try { partnerClientConn.send({ action: "stop", speed: 0 }); } catch (_) {}
+        }
+
+        if (manual) {
+            const hasPartner = (typeof partnerConn !== "undefined" && partnerConn && partnerConn.open) ||
+                               (typeof partnerClientConn !== "undefined" && partnerClientConn && partnerClientConn.open);
+            log(hasPartner ? "🛑 ALL VIBRATION STOPPED (Partner connection remains active)" : "🛑 ALL VIBRATION STOPPED", "error");
+        }
+    }
+
+        function stopPreset() {
+        if (presetTimer) {
+            clearInterval(presetTimer);
+            clearTimeout(presetTimer);
+            presetTimer = null;
+        }
+        if (typeof isSeqRunning !== 'undefined' && isSeqRunning) stopSequencer();
+        activePreset = null;
+        const rBanner = document.getElementById("rouletteBanner");
+        if (rBanner) rBanner.style.display = "none";
+        document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("active"));
+    }
+
+function startPreset(name) {
+        stopPreset();
+        activePreset = name;
+
+        // Reset roulette banner if not roulette
+        const rBanner = document.getElementById("rouletteBanner");
+        if (rBanner && name !== "roulette") rBanner.style.display = "none";
+
+        const btn = Array.from(document.querySelectorAll(".preset-btn")).find(b => b.innerText.toLowerCase().includes(name));
+        if (btn) btn.classList.add("active");
+
+        const advancedNames = ["climax", "edging", "staccato", "breathing", "earthquake", "roulette"];
+        if (advancedNames.includes(name)) {
+            runAdvancedPreset(name);
+            return;
+        }
+        let step = 0;
+        if (name === "constant") {
+            currentSpeed = 6;
+            document.getElementById("speedSlider").value = 6;
+            document.getElementById("speedValue").innerText = 6;
+            sendCommand(6);
+        } else if (name === "pulse") {
+            presetTimer = setInterval(() => {
+                step = (step + 1) % 2;
+                const spd = step === 1 ? 8 : 0;
+                sendCommand(spd);
+            }, 600);
+        } else if (name === "wave") {
+            const pattern = [2, 4, 6, 8, 9, 7, 5, 3, 1];
+            presetTimer = setInterval(() => {
+                step = (step + 1) % pattern.length;
+                sendCommand(pattern[step]);
+                document.getElementById("speedValue").innerText = pattern[step];
+                document.getElementById("speedSlider").value = pattern[step];
+            }, 450);
+        } else if (name === "escalate") {
+            let spd = 1;
+            presetTimer = setInterval(() => {
+                sendCommand(spd);
+                document.getElementById("speedValue").innerText = spd;
+                document.getElementById("speedSlider").value = spd;
+                spd = (spd % 9) + 1;
+            }, 800);
+        } else if (name === "heartbeat") {
+            const beats = [7, 0, 9, 0, 0, 0];
+            presetTimer = setInterval(() => {
+                step = (step + 1) % beats.length;
+                sendCommand(beats[step]);
+                document.getElementById("speedValue").innerText = beats[step];
+                document.getElementById("speedSlider").value = beats[step];
+            }, 250);
+        } else if (name === "random") {
+            presetTimer = setInterval(() => {
+                const spd = Math.floor(Math.random() * 10);
+                sendCommand(spd);
+                document.getElementById("speedValue").innerText = spd;
+                document.getElementById("speedSlider").value = spd;
+            }, 500);
+        }
+    }
+
+    
+    // -------------------------------------------------------------
+    // Sound & Music Reactive Audio Engine
+    // -------------------------------------------------------------
+    let audioContext = null;
+    let audioAnalyser = null;
+    let audioSource = null;
+    let audioStream = null;
+    let isSoundActive = false;
+    let audioMode = 'volume'; // 'volume' or 'bass'
+    let audioAnimFrame = null;
+    let lastAudioSendTime = 0;
+    let smoothedLevel = 0;
+
+    function setAudioMode(mode) {
+        audioMode = mode;
+        document.getElementById("btnAudioVol").classList.toggle("active", mode === 'volume');
+        document.getElementById("btnAudioBass").classList.toggle("active", mode === 'bass');
+        log(`Sound mode switched to: ${mode === 'volume' ? 'Volume & Dialogue' : 'Bass & Beats'}`, "info");
+    }
+
+    async function toggleSoundControl() {
+        if (isSoundActive) {
+            stopSoundControl();
+        } else {
+            await startSoundControl();
+        }
+    }
+
+    async function startSoundControl() {
+        stopPreset();
+        const helpNotice = document.getElementById("micHelpNotice");
+        if (helpNotice) helpNotice.style.display = "block";
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            audioStream = stream;
+
+            const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+            audioContext = new AudioCtxClass();
+            audioSource = audioContext.createMediaStreamSource(stream);
+            audioAnalyser = audioContext.createAnalyser();
+            audioAnalyser.fftSize = 256;
+            audioAnalyser.smoothingTimeConstant = 0.6;
+            audioSource.connect(audioAnalyser);
+
+            isSoundActive = true;
+            document.getElementById("soundToggleBtn").innerText = "⏹️ Stop Sound Control";
+            document.getElementById("soundToggleBtn").style.background = "linear-gradient(135deg, #ff1744, #d50000)";
+            document.getElementById("soundStatusText").innerText = "Listening Live...";
+            document.getElementById("soundStatusBadge").style.color = "var(--success)";
+            document.getElementById("soundStatusBadge").style.background = "rgba(0, 230, 118, 0.15)";
+            document.getElementById("soundStatusBadge").style.borderColor = "rgba(0, 230, 118, 0.3)";
+            log("🎙️ Microphone connected! Audio reactive engine active.", "info");
+
+            processAudio();
+        } catch (err) {
+            log(`Microphone access error: ${err.message}`, "error");
+            alert("Could not access microphone: " + err.message + "\n\nTip: Allow microphone permission in browser or test on http://localhost:8000.");
+            stopSoundControl();
+        }
+    }
+
+    function stopSoundControl() {
+        isSoundActive = false;
+        if (audioAnimFrame) {
+            cancelAnimationFrame(audioAnimFrame);
+            audioAnimFrame = null;
+        }
+        if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+            audioStream = null;
+        }
+        if (audioContext && audioContext.state !== 'closed') {
+            audioContext.close();
+            audioContext = null;
+        }
+
+        document.getElementById("soundToggleBtn").innerText = "🎙️ Start Sound Control";
+        document.getElementById("soundToggleBtn").style.background = "linear-gradient(135deg, #7c4dff, #ff4081)";
+        document.getElementById("soundStatusText").innerText = "Mic Inactive";
+        document.getElementById("soundStatusBadge").style.color = "var(--accent-secondary)";
+        document.getElementById("soundStatusBadge").style.background = "rgba(124, 77, 255, 0.15)";
+        document.getElementById("soundStatusBadge").style.borderColor = "rgba(124, 77, 255, 0.3)";
+        document.getElementById("vuMeterFill").style.width = "0%";
+        document.getElementById("audioLevelText").innerText = "Input Volume: 0%";
+        document.getElementById("audioTargetSpeed").innerText = "Target: Speed 0 (Off)";
+
+        stopAll(false);
+    }
+
+    function processAudio() {
+        if (!isSoundActive || !audioAnalyser) return;
+
+        const bufferLength = audioAnalyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        audioAnalyser.getByteFrequencyData(dataArray);
+
+        let energy = 0;
+        if (audioMode === 'bass') {
+            // Low frequencies: bins 1 to 7 (roughly 30Hz - 250Hz for kicks & basslines)
+            let bassSum = 0;
+            const bassBins = Math.min(8, bufferLength);
+            for (let i = 1; i < bassBins; i++) {
+                bassSum += dataArray[i];
+            }
+            energy = bassSum / (bassBins - 1);
+        } else {
+            // Overall volume
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+            }
+            energy = sum / bufferLength;
+        }
+
+        // Apply Sensitivity & Noise Gate
+        const sensitivity = parseFloat(document.getElementById("sensSlider").value || 2.5);
+        const noiseGate = parseFloat(document.getElementById("gateSlider").value || 15);
+
+        // Normalize 0 to 100
+        let percent = (energy / 255) * 100 * sensitivity;
+        
+        // Subtract noise gate
+        if (percent < noiseGate) {
+            percent = 0;
+        } else {
+            percent = Math.min(100, ((percent - noiseGate) / (100 - noiseGate)) * 100);
+        }
+
+        // Smooth decaying level
+        if (percent > smoothedLevel) {
+            smoothedLevel = percent; // fast attack
+        } else {
+            smoothedLevel = smoothedLevel * 0.85; // smooth decay
+        }
+
+        // Update VU visualizer UI
+        const fillPercent = Math.min(100, Math.round(smoothedLevel));
+        document.getElementById("vuMeterFill").style.width = `${fillPercent}%`;
+        document.getElementById("audioLevelText").innerText = `Level: ${fillPercent}%`;
+
+        // Map percent (0 - 100) to speed (0 - 9)
+        let targetSpeed = 0;
+        if (fillPercent > 5) {
+            targetSpeed = Math.min(9, Math.max(1, Math.round((fillPercent / 100) * 9)));
+        }
+
+        const speedLabel = targetSpeed === 0 ? "Target: Speed 0 (Off)" : `Target: Speed ${targetSpeed} (${targetSpeed <= 3 ? 'Low' : targetSpeed <= 6 ? 'Med' : 'High'})`;
+        document.getElementById("audioTargetSpeed").innerText = speedLabel;
+
+        // Rate-limit BLE commands to ~90ms to maintain real-time responsiveness without flood
+        const now = Date.now();
+        if (now - lastAudioSendTime > 90 && targetSpeed !== currentSpeed) {
+            lastAudioSendTime = now;
+            currentSpeed = targetSpeed;
+            document.getElementById("speedSlider").value = currentSpeed;
+            document.getElementById("speedValue").innerText = currentSpeed;
+            sendCommand(currentSpeed);
+        }
+
+        audioAnimFrame = requestAnimationFrame(processAudio);
+    }
+
+    
+    // -------------------------------------------------------------
+    // Advanced Specialty Presets & Roulette
+    // -------------------------------------------------------------
+    let rouletteTimer = null;
+
+    function runAdvancedPreset(name) {
+        let step = 0;
+        const banner = document.getElementById("rouletteBanner");
+        if (banner) banner.style.display = "none";
+
+        if (name === "climax") {
+            log("🌊 Climax Ramp: Starting gradual tension build...", "info");
+            // 2-minute gradual crescendo curve
+            const curve = [1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 7, 8, 9, 9, 9, 9, 7, 5, 2, 0];
+            let idx = 0;
+            presetTimer = setInterval(() => {
+                const spd = curve[idx];
+                sendCommand(spd);
+                document.getElementById("speedSlider").value = spd;
+                document.getElementById("speedValue").innerText = spd;
+                idx++;
+                if (idx >= curve.length) {
+                    stopAll(true);
+                    log("🌊 Climax Ramp completed!", "info");
+                }
+            }, 6000); // changes every 6s (total 2 mins)
+            sendCommand(1);
+        } else if (name === "edging") {
+            log("😈 Tease & Denial: Building up with sudden drop-offs...", "info");
+            let edgSpeed = 1;
+            let climbing = true;
+            presetTimer = setInterval(() => {
+                if (climbing) {
+                    edgSpeed++;
+                    if (edgSpeed >= 8) {
+                        // Peak reached -> sudden cut to 0 to tease!
+                        sendCommand(8);
+                        document.getElementById("speedSlider").value = 8;
+                        document.getElementById("speedValue").innerText = 8;
+                        climbing = false;
+                        log("😈 PEAK REACHED! Cutting to zero for tease...", "tx");
+                        setTimeout(() => {
+                            sendCommand(0);
+                            document.getElementById("speedSlider").value = 0;
+                            document.getElementById("speedValue").innerText = "0";
+                        }, 800);
+                        return;
+                    }
+                } else {
+                    // Resume climbing after 4 seconds of silence
+                    climbing = true;
+                    edgSpeed = 1;
+                    log("😈 Resuming tease ramp...", "tx");
+                }
+                sendCommand(edgSpeed);
+                document.getElementById("speedSlider").value = edgSpeed;
+                document.getElementById("speedValue").innerText = edgSpeed;
+            }, 1200);
+        } else if (name === "staccato") {
+            log("⚡ Machine Gun: Rapid on/off fluttering...", "info");
+            let on = false;
+            presetTimer = setInterval(() => {
+                on = !on;
+                const spd = on ? 8 : 0;
+                sendCommand(spd);
+                document.getElementById("speedSlider").value = spd;
+                document.getElementById("speedValue").innerText = spd;
+            }, 120);
+        } else if (name === "breathing") {
+            log("🫀 Respiration: Smooth human breathing cycle...", "info");
+            // Inhale (ramp up), hold, exhale (ramp down), hold
+            const breath = [1, 2, 4, 6, 8, 8, 6, 4, 2, 1, 0, 0];
+            let bIdx = 0;
+            presetTimer = setInterval(() => {
+                const spd = breath[bIdx];
+                sendCommand(spd);
+                document.getElementById("speedSlider").value = spd;
+                document.getElementById("speedValue").innerText = spd;
+                bIdx = (bIdx + 1) % breath.length;
+            }, 750);
+        } else if (name === "earthquake") {
+            log("🌋 Earthquake: Erratic heavy rumbling...", "info");
+            const runJitter = () => {
+                if (activePreset !== "earthquake") return;
+                const spd = Math.random() > 0.4 ? (Math.random() > 0.5 ? 9 : 7) : (Math.random() > 0.5 ? 2 : 0);
+                sendCommand(spd);
+                document.getElementById("speedSlider").value = spd;
+                document.getElementById("speedValue").innerText = spd;
+                const nextDelay = 80 + Math.floor(Math.random() * 200);
+                presetTimer = setTimeout(runJitter, nextDelay);
+            };
+            runJitter();
+        } else if (name === "roulette") {
+            log("🎲 Roulette Mode: Randomized surprise timer started!", "info");
+            if (banner) banner.style.display = "block";
+            const rollSurprise = () => {
+                if (activePreset !== "roulette") return;
+                const surpriseSpeed = Math.floor(Math.random() * 8) + 2; // 2 to 9
+                const duration = Math.floor(Math.random() * 15) + 8; // 8 to 22s
+                sendCommand(surpriseSpeed);
+                document.getElementById("speedSlider").value = surpriseSpeed;
+                document.getElementById("speedValue").innerText = surpriseSpeed;
+
+                let timeLeft = duration;
+                const rText = document.getElementById("rouletteText");
+                if (rText) rText.innerText = `🎲 Speed ${surpriseSpeed} for next ${timeLeft}s!`;
+
+                const countdown = setInterval(() => {
+                    if (activePreset !== "roulette") { clearInterval(countdown); return; }
+                    timeLeft--;
+                    if (rText) rText.innerText = `🎲 Speed ${surpriseSpeed} for next ${timeLeft}s!`;
+                    if (timeLeft <= 0) {
+                        clearInterval(countdown);
+                        rollSurprise();
+                    }
+                }, 1000);
+            };
+            rollSurprise();
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Phone Motion & Tilt Engine
+    // -------------------------------------------------------------
+    let isMotionActive = false;
+    let lastMotionSend = 0;
+    let lastShakeTime = 0;
+
+    function toggleMotionControl() {
+        if (isMotionActive) stopMotionControl();
+        else startMotionControl();
+    }
+
+    function startMotionControl() {
+        stopPreset();
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission().then(res => {
+                if (res === 'granted') attachMotion();
+                else alert('Permission to access orientation sensors was denied.');
+            }).catch(e => alert('Orientation sensor error: ' + e));
+        } else {
+            attachMotion();
+        }
+    }
+
+    function attachMotion() {
+        window.addEventListener('deviceorientation', handleOrientation);
+        window.addEventListener('devicemotion', handleMotion);
+        isMotionActive = true;
+        document.getElementById("motionToggleBtn").innerText = "⏹️ Stop Motion Control";
+        document.getElementById("motionToggleBtn").style.background = "linear-gradient(135deg, #ff1744, #d50000)";
+        document.getElementById("motionStatusText").innerText = "Active - Tilt Phone";
+        document.getElementById("motionStatusBadge").style.color = "var(--success)";
+        document.getElementById("motionStatusBadge").style.background = "rgba(0, 230, 118, 0.15)";
+        document.getElementById("motionStatusBadge").style.borderColor = "rgba(0, 230, 118, 0.3)";
+        log("📱 Motion & Tilt Sensor active! Tilt phone forward/back.", "info");
+    }
+
+    function stopMotionControl() {
+        isMotionActive = false;
+        window.removeEventListener('deviceorientation', handleOrientation);
+        window.removeEventListener('devicemotion', handleMotion);
+        document.getElementById("motionToggleBtn").innerText = "📱 Enable Tilt & Shake Control";
+        document.getElementById("motionToggleBtn").style.background = "linear-gradient(135deg, #7c4dff, #ff4081)";
+        document.getElementById("motionStatusText").innerText = "Inactive";
+        document.getElementById("motionStatusBadge").style.color = "var(--accent-secondary)";
+        document.getElementById("motionStatusBadge").style.background = "rgba(124, 77, 255, 0.15)";
+        document.getElementById("motionStatusBadge").style.borderColor = "rgba(124, 77, 255, 0.3)";
+        document.getElementById("tiltMeterFill").style.width = "0%";
+        document.getElementById("tiltAngleText").innerText = "Tilt Angle: 0°";
+        document.getElementById("tiltSpeedText").innerText = "Speed: 0";
+        stopAll(false);
+    }
+
+    function handleOrientation(e) {
+        if (!isMotionActive) return;
+        const beta = e.beta; // Tilt forward/backward (-90 to +90 deg)
+        if (beta === null || beta === undefined) return;
+
+        // Map pitch: 0 deg (flat) = 0 speed, 45 deg (tilted up) = 9 max speed
+        const clamped = Math.max(0, Math.min(45, beta - 5));
+        const targetSpeed = Math.round((clamped / 45) * 9);
+
+        document.getElementById("tiltAngleText").innerText = `Tilt: ${Math.round(beta)}°`;
+        document.getElementById("tiltSpeedText").innerText = `Speed: ${targetSpeed}`;
+        document.getElementById("tiltMeterFill").style.width = `${(targetSpeed / 9) * 100}%`;
+
+        const now = Date.now();
+        if (now - lastMotionSend > 90 && targetSpeed !== currentSpeed) {
+            lastMotionSend = now;
+            currentSpeed = targetSpeed;
+            document.getElementById("speedSlider").value = currentSpeed;
+            document.getElementById("speedValue").innerText = currentSpeed;
+            sendCommand(currentSpeed);
+        }
+    }
+
+    function handleMotion(e) {
+        if (!isMotionActive) return;
+        const acc = e.accelerationIncludingGravity;
+        if (!acc) return;
+        const total = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
+        if (total > 24 && Date.now() - lastShakeTime > 800) {
+            lastShakeTime = Date.now();
+            log("📳 Phone Shaken! Surge to Max Level 9!", "tx");
+            sendCommand(9);
+            document.getElementById("speedSlider").value = 9;
+            document.getElementById("speedValue").innerText = 9;
+            setTimeout(() => {
+                if (isMotionActive) {
+                    sendCommand(currentSpeed);
+                    document.getElementById("speedSlider").value = currentSpeed;
+                    document.getElementById("speedValue").innerText = currentSpeed;
+                }
+            }, 1000);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Custom 8-Step Pattern Sequencer
+    // -------------------------------------------------------------
+    let seqSteps = [2, 4, 7, 9, 6, 3, 1, 0];
+    let isSeqRunning = false;
+    let seqTimer = null;
+    let currentSeqIndex = 0;
+
+    function renderSequencer() {
+        const container = document.getElementById("seqContainer");
+        if (!container) return;
+        container.innerHTML = "";
+        seqSteps.forEach((val, i) => {
+            const stepEl = document.createElement("div");
+            stepEl.className = "seq-step";
+            stepEl.id = `seqStep_${i}`;
+            stepEl.onclick = () => cycleStep(i);
+
+            const barTrack = document.createElement("div");
+            barTrack.className = "seq-bar-track";
+
+            const fill = document.createElement("div");
+            fill.className = "seq-bar-fill";
+            fill.style.height = `${(val / 9) * 100}%`;
+            barTrack.appendChild(fill);
+
+            const valLabel = document.createElement("span");
+            valLabel.className = "seq-step-val";
+            valLabel.innerText = val;
+
+            const numLabel = document.createElement("span");
+            numLabel.className = "seq-step-num";
+            numLabel.innerText = `#${i + 1}`;
+
+            stepEl.appendChild(barTrack);
+            stepEl.appendChild(valLabel);
+            stepEl.appendChild(numLabel);
+            container.appendChild(stepEl);
+        });
+    }
+
+    function cycleStep(index) {
+        // Cycle: 0 -> 2 -> 5 -> 7 -> 9 -> 0
+        const levels = [0, 2, 4, 6, 8, 9];
+        const curr = seqSteps[index];
+        let nextIdx = (levels.indexOf(curr) + 1) % levels.length;
+        if (nextIdx === -1) nextIdx = 1;
+        seqSteps[index] = levels[nextIdx];
+        renderSequencer();
+    }
+
+    function randomizeSequencer() {
+        seqSteps = seqSteps.map(() => Math.floor(Math.random() * 10));
+        renderSequencer();
+        log("🔀 Sequencer randomized with new custom pattern!", "info");
+    }
+
+    function clearSequencer() {
+        seqSteps = [0, 0, 0, 0, 0, 0, 0, 0];
+        renderSequencer();
+    }
+
+    function toggleSequencer() {
+        if (isSeqRunning) stopSequencer();
+        else startSequencer();
+    }
+
+    function startSequencer() {
+        stopPreset();
+        isSeqRunning = true;
+        currentSeqIndex = 0;
+        document.getElementById("seqPlayBtn").innerText = "⏹ Stop Sequencer";
+        document.getElementById("seqPlayBtn").style.background = "linear-gradient(135deg, #ff1744, #d50000)";
+        document.getElementById("seqStatusText").innerText = "Looping Live...";
+        document.getElementById("seqStatusBadge").style.color = "var(--success)";
+        document.getElementById("seqStatusBadge").style.background = "rgba(0, 230, 118, 0.15)";
+        document.getElementById("seqStatusBadge").style.borderColor = "rgba(0, 230, 118, 0.3)";
+        log("🎛️ Custom Pattern Sequencer loop started!", "info");
+
+        stepSequencer();
+    }
+
+    function stepSequencer() {
+        if (!isSeqRunning) return;
+        document.querySelectorAll(".seq-step").forEach((el, idx) => {
+            el.classList.toggle("active", idx === currentSeqIndex);
+        });
+
+        const spd = seqSteps[currentSeqIndex];
+        sendCommand(spd);
+        document.getElementById("speedSlider").value = spd;
+        document.getElementById("speedValue").innerText = spd;
+
+        currentSeqIndex = (currentSeqIndex + 1) % seqSteps.length;
+        const tempo = parseInt(document.getElementById("seqTempoSlider").value || 250, 10);
+        seqTimer = setTimeout(stepSequencer, tempo);
+    }
+
+    function stopSequencer() {
+        isSeqRunning = false;
+        if (seqTimer) {
+            clearTimeout(seqTimer);
+            seqTimer = null;
+        }
+        document.querySelectorAll(".seq-step").forEach(el => el.classList.remove("active"));
+        document.getElementById("seqPlayBtn").innerText = "▶ Play Loop";
+        document.getElementById("seqPlayBtn").style.background = "linear-gradient(135deg, #00c853, #009624)";
+        document.getElementById("seqStatusText").innerText = "Stopped";
+        document.getElementById("seqStatusBadge").style.color = "var(--accent-secondary)";
+        document.getElementById("seqStatusBadge").style.background = "rgba(124, 77, 255, 0.15)";
+        document.getElementById("seqStatusBadge").style.borderColor = "rgba(124, 77, 255, 0.3)";
+        stopAll(false);
+    }
+
+    
+    // -------------------------------------------------------------
+    // 1. Dedicated Roulette & Dare Challenge Engine
+    // -------------------------------------------------------------
+    let rouletteInterval = null;
+    let rouletteCountdown = null;
+    const DARE_PROMPTS = [
+        "Hold this speed without making a sound!",
+        "Close your eyes and breathe deep for the entire countdown.",
+        "Hands-free challenge! Feel every vibration pulse.",
+        "Double-trouble: tease yourself until the timer hits zero.",
+        "Surrender all control to the toy!",
+        "Maximum sensation focus: no touching allowed."
+    ];
+
+    function spinRoulette() {
+        stopPreset();
+        if (rouletteInterval) clearInterval(rouletteInterval);
+        if (rouletteCountdown) clearInterval(rouletteCountdown);
+
+        const speedDial = document.getElementById("rouletteSpeedDial");
+        const timerDial = document.getElementById("rouletteTimerDial");
+        const dareText = document.getElementById("rouletteDareText");
+        const badge = document.getElementById("rouletteStatusBadge");
+        const statusText = document.getElementById("rouletteStatusText");
+
+        badge.style.color = "var(--success)";
+        badge.style.background = "rgba(0, 230, 118, 0.15)";
+        badge.style.borderColor = "rgba(0, 230, 118, 0.3)";
+        statusText.innerText = "Spinning Wheel...";
+
+        let spins = 0;
+        rouletteInterval = setInterval(() => {
+            const randomPick = Math.floor(Math.random() * 9) + 1;
+            speedDial.innerText = `Speed ${randomPick}`;
+            spins++;
+            if (spins > 16) {
+                clearInterval(rouletteInterval);
+                rouletteInterval = null;
+
+                const finalSpeed = Math.floor(Math.random() * 8) + 2; // 2 to 9
+                const duration = Math.floor(Math.random() * 25) + 15; // 15 to 40 seconds
+                const dare = DARE_PROMPTS[Math.floor(Math.random() * DARE_PROMPTS.length)];
+
+                speedDial.innerText = `⚡ Speed ${finalSpeed}`;
+                dareText.innerText = `"${dare}"`;
+                statusText.innerText = `Active: ${duration}s`;
+
+                sendCommand(finalSpeed);
+                document.getElementById("speedSlider").value = finalSpeed;
+                document.getElementById("speedValue").innerText = finalSpeed;
+                log(`🎰 Roulette landed on Speed ${finalSpeed} for ${duration}s! Dare: ${dare}`, "tx");
+
+                let timeLeft = duration;
+                timerDial.innerText = `⏳ Countdown: ${timeLeft}s remaining`;
+
+                rouletteCountdown = setInterval(() => {
+                    timeLeft--;
+                    timerDial.innerText = `⏳ Countdown: ${timeLeft}s remaining`;
+                    if (timeLeft <= 0) {
+                        clearInterval(rouletteCountdown);
+                        rouletteCountdown = null;
+                        stopAll(true);
+                        timerDial.innerText = "🎉 Challenge Complete!";
+                        statusText.innerText = "Completed";
+                    }
+                }, 1000);
+            }
+        }, 80);
+    }
+
+    function stopRoulette() {
+        if (rouletteInterval) { clearInterval(rouletteInterval); rouletteInterval = null; }
+        if (rouletteCountdown) { clearInterval(rouletteCountdown); rouletteCountdown = null; }
+        document.getElementById("rouletteSpeedDial").innerText = "?";
+        document.getElementById("rouletteTimerDial").innerText = "Press Spin to Begin";
+        document.getElementById("rouletteDareText").innerText = '"Are you ready for a surprise?"';
+        document.getElementById("rouletteStatusText").innerText = "Stopped";
+        stopAll(true);
+    }
+
+    // -------------------------------------------------------------
+    // 2. Movie & Video Sync (.funscript Player) Engine
+    // -------------------------------------------------------------
+    let funscriptData = null;
+    let videoAnimFrame = null;
+    let lastVideoSpeed = -1;
+    const videoPlayer = document.getElementById("syncVideoPlayer");
+
+    function loadVideoFile(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const url = URL.createObjectURL(file);
+            videoPlayer.src = url;
+            document.getElementById("videoStatusText").innerText = "Video Ready: " + file.name;
+            log(`🎬 Loaded video: ${file.name}`, "info");
+        }
+    }
+
+    function loadFunscriptFile(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && parsed.actions && parsed.actions.length > 0) {
+                        funscriptData = parsed.actions.sort((a, b) => a.at - b.at);
+                        document.getElementById("funscriptInfo").innerText = `Script: ${file.name} (${funscriptData.length} actions)`;
+                        log(`📜 Loaded .funscript: ${file.name} with ${funscriptData.length} synced actions!`, "info");
+                    } else {
+                        alert("Invalid .funscript file. Expected JSON with 'actions' array.");
+                    }
+                } catch (err) {
+                    alert("Could not parse .funscript file: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    function loadDemoFunscript() {
+        // Generate an exciting 10-minute demo script with ramps, waves, and beats
+        const actions = [];
+        let t = 0;
+        while (t < 600000) {
+            // Ramps, pulses, waves
+            actions.push({ at: t, pos: 10 });
+            actions.push({ at: t + 2000, pos: 40 });
+            actions.push({ at: t + 4000, pos: 80 });
+            actions.push({ at: t + 6000, pos: 100 });
+            actions.push({ at: t + 8000, pos: 20 });
+            t += 10000;
+        }
+        funscriptData = actions;
+        document.getElementById("funscriptInfo").innerText = "Script: Built-in Demo Sync Pattern (10 Mins)";
+        log("⚡ Loaded 10-Minute Demo Sync Pattern! Play video to test.", "info");
+    }
+
+    if (videoPlayer) {
+        videoPlayer.addEventListener("play", () => {
+            log("🎬 Video playback started - Synced haptics active!", "tx");
+            syncFunscriptLoop();
+        });
+
+        videoPlayer.addEventListener("pause", () => {
+            if (videoAnimFrame) cancelAnimationFrame(videoAnimFrame);
+            stopAll(false);
+            log("⏸️ Video paused - Stopped vibration.", "info");
+        });
+
+        videoPlayer.addEventListener("ended", () => {
+            if (videoAnimFrame) cancelAnimationFrame(videoAnimFrame);
+            stopAll(false);
+            log("⏹️ Video finished - Stopped vibration.", "info");
+        });
+    }
+
+    function syncFunscriptLoop() {
+        if (!videoPlayer || videoPlayer.paused || videoPlayer.ended) return;
+
+        if (funscriptData && funscriptData.length > 0) {
+            const currentMs = videoPlayer.currentTime * 1000;
+
+            // Find current funscript segment
+            let p1 = funscriptData[0];
+            let p2 = funscriptData[funscriptData.length - 1];
+
+            for (let i = 0; i < funscriptData.length - 1; i++) {
+                if (funscriptData[i].at <= currentMs && funscriptData[i + 1].at >= currentMs) {
+                    p1 = funscriptData[i];
+                    p2 = funscriptData[i + 1];
+                    break;
+                }
+            }
+
+            // Linear interpolation of position (0 - 100)
+            let pos = p1.pos;
+            if (p2.at > p1.at) {
+                const fraction = (currentMs - p1.at) / (p2.at - p1.at);
+                pos = p1.pos + fraction * (p2.pos - p1.pos);
+            }
+            pos = Math.max(0, Math.min(100, Math.round(pos)));
+
+            // Map position to speed 0 - 9
+            const speed = Math.round((pos / 100) * 9);
+
+            document.getElementById("funscriptFill").style.width = `${pos}%`;
+            document.getElementById("funscriptSyncLevel").innerText = `Sync: Speed ${speed} (${pos}%)`;
+
+            if (speed !== lastVideoSpeed) {
+                lastVideoSpeed = speed;
+                currentSpeed = speed;
+                document.getElementById("speedSlider").value = speed;
+                document.getElementById("speedValue").innerText = speed;
+                sendCommand(speed);
+            }
+        }
+
+        videoAnimFrame = requestAnimationFrame(syncFunscriptLoop);
+    }
+
+    // -------------------------------------------------------------
+    // 3. Long-Distance Partner Control & Live A/V Streaming Engine
+    // -------------------------------------------------------------
+    let peer = null;
+    let partnerConn = null;
+    let partnerClientConn = null;
+    let localHostMediaStream = null;
+    let currentFacingMode = "user";
+    let activeMediaCall = null;
+
+    // -------------------------------------------------------------
+    // Live Audio & Video Streaming Engine (One-Way: Host -> Partner)
+    // -------------------------------------------------------------
+    async function startHostMediaStream() {
+        try {
+            if (localHostMediaStream) {
+                localHostMediaStream.getTracks().forEach(t => t.stop());
+            }
+
+            let stream = null;
+            const videoConstraints = {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                frameRate: { ideal: 24, max: 30 }
+            };
+            if (currentFacingMode) {
+                videoConstraints.facingMode = { ideal: currentFacingMode };
+            }
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: videoConstraints,
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+            } catch (e1) {
+                console.warn("Ideal video constraints failed, retrying with standard video+audio:", e1);
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            }
+
+            localHostMediaStream = stream;
+            const vTracks = localHostMediaStream.getVideoTracks();
+            const aTracks = localHostMediaStream.getAudioTracks();
+            console.log(`[Host] Captured tracks -> Video: ${vTracks.length}, Audio: ${aTracks.length}`);
+
+            if (vTracks.length > 0) {
+                vTracks[0].enabled = true;
+                log(`📹 Camera active: ${vTracks[0].label || "Webcam"}`, "info");
+            } else {
+                log("⚠️ Warning: No video track found on webcam", "error");
+            }
+
+            const selfieVid = document.getElementById("hostSelfieVideo");
+            if (selfieVid) {
+                selfieVid.srcObject = localHostMediaStream;
+                selfieVid.muted = true;
+                selfieVid.playsInline = true;
+                selfieVid.play().catch(e => console.warn("Selfie play error:", e));
+            }
+            const selfieCard = document.getElementById("hostSelfieWindow");
+            if (selfieCard) {
+                const mirrorPref = localStorage.getItem("ls_show_camera_mirror") === "true";
+                selfieCard.style.display = mirrorPref ? "flex" : "none";
+            }
+
+            // If call is already active, replace video & audio tracks
+            if (activeMediaCall && activeMediaCall.peerConnection) {
+                const pc = activeMediaCall.peerConnection;
+                const senders = pc.getSenders();
+                const vidTrack = localHostMediaStream.getVideoTracks()[0];
+                const audTrack = localHostMediaStream.getAudioTracks()[0];
+                const vSender = senders.find(s => s.track && s.track.kind === 'video');
+                const aSender = senders.find(s => s.track && s.track.kind === 'audio');
+                if (vSender && vidTrack) vSender.replaceTrack(vidTrack);
+                if (aSender && audTrack) aSender.replaceTrack(audTrack);
+            }
+
+            return localHostMediaStream;
+        } catch (err) {
+            log(`Camera/Mic Access error: ${err.message}`, "error");
+            alert("Could not access camera: " + err.message + "\nPlease check browser camera permissions.");
+            return null;
+        }
+    }
+
+    async function flipHostCamera() {
+        currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+        await startHostMediaStream();
+    }
+
+    function toggleFloatingCard(cardId, btnId) {
+        const card = document.getElementById(cardId);
+        const btn = document.getElementById(btnId);
+        if (!card || !btn) return;
+        const isMin = card.classList.toggle("minimized");
+        btn.innerText = isMin ? "+" : "−";
+    }
+
+    function toggleVideoFullscreen(vidId) {
+        const vid = document.getElementById(vidId);
+        if (!vid) return;
+        if (!document.fullscreenElement) {
+            if (vid.requestFullscreen) vid.requestFullscreen();
+            else if (vid.webkitRequestFullscreen) vid.webkitRequestFullscreen();
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+        }
+    }
+
+    function showToast(msg, duration = 3500) {
+        let toast = document.getElementById("appToast");
+        if (!toast) {
+            toast = document.createElement("div");
+            toast.id = "appToast";
+            toast.style.cssText = "position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1f1f2e; color: #fff; border: 1px solid #ff4081; box-shadow: 0 8px 24px rgba(0,0,0,0.7); padding: 10px 22px; border-radius: 24px; font-size: 0.85rem; font-weight: bold; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;";
+            document.body.appendChild(toast);
+        }
+        toast.innerText = msg;
+        toast.style.opacity = "1";
+        toast.style.transform = "translateX(-50%) translateY(0)";
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateX(-50%) translateY(-10px)";
+        }, duration);
+    }
+
+    function unmutePartnerAudio() {
+        const vid = document.getElementById("remotePartnerVideo");
+        const prompt = document.getElementById("partnerUnmutePrompt");
+        if (vid) {
+            vid.muted = false;
+            vid.volume = 1;
+            vid.play().catch(() => {});
+        }
+        if (prompt) prompt.style.display = "none";
+        const volSlider = document.getElementById("partnerVolSlider");
+        if (volSlider) volSlider.value = 1;
+        const volIcon = document.getElementById("partnerVolIcon");
+        if (volIcon) volIcon.innerText = "🔊";
+    }
+
+    function setPartnerVolume(val) {
+        const vid = document.getElementById("remotePartnerVideo");
+        const volIcon = document.getElementById("partnerVolIcon");
+        if (vid) {
+            vid.volume = parseFloat(val);
+            vid.muted = (parseFloat(val) === 0);
+            if (volIcon) volIcon.innerText = vid.muted ? "🔇" : (vid.volume > 0.5 ? "🔊" : "🔉");
+        }
+    }
+
+    function togglePartnerMute() {
+        const vid = document.getElementById("remotePartnerVideo");
+        const volSlider = document.getElementById("partnerVolSlider");
+        const volIcon = document.getElementById("partnerVolIcon");
+        if (!vid) return;
+        vid.muted = !vid.muted;
+        if (volIcon) volIcon.innerText = vid.muted ? "🔇" : "🔊";
+        if (volSlider && !vid.muted && parseFloat(volSlider.value) === 0) {
+            volSlider.value = 0.8;
+            vid.volume = 0.8;
+        }
+    }
+
+    // Draggable Helper (unified pointer + touch for desktop & mobile)
+    function makeDraggable(element, handle) {
+        if (!element || !handle) return;
+        let startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
+        let isDragging = false;
+
+        function onStart(e) {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'INPUT') return;
+            isDragging = true;
+            const pt = e.touches ? e.touches[0] : e;
+            startX = pt.clientX;
+            startY = pt.clientY;
+            const rect = element.getBoundingClientRect();
+            initialLeft = rect.left;
+            initialTop = rect.top;
+            element.style.bottom = 'auto';
+            element.style.right = 'auto';
+            element.style.left = `${initialLeft}px`;
+            element.style.top = `${initialTop}px`;
+        }
+
+        function onMove(e) {
+            if (!isDragging) return;
+            if (e.cancelable) e.preventDefault();
+            const pt = e.touches ? e.touches[0] : e;
+            const dx = pt.clientX - startX;
+            const dy = pt.clientY - startY;
+            const maxW = window.innerWidth - element.offsetWidth - 6;
+            const maxH = window.innerHeight - element.offsetHeight - 6;
+            const newX = Math.max(6, Math.min(maxW, initialLeft + dx));
+            const newY = Math.max(6, Math.min(maxH, initialTop + dy));
+            element.style.left = `${newX}px`;
+            element.style.top = `${newY}px`;
+        }
+
+        function onEnd() {
+            isDragging = false;
+        }
+
+        handle.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+
+        handle.addEventListener('touchstart', onStart, { passive: true });
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('touchend', onEnd);
+    }
+
+    function initPeerIfPossible() {
+        if (typeof Peer === 'undefined') {
+            log("ℹ️ PeerJS loading... (Requires internet connection for Long-Distance Partner link)", "info");
+            return false;
+        }
+        return true;
+    }
+
+    async function createPartnerRoom() {
+        if (!initPeerIfPossible()) {
+            alert("PeerJS is still loading. Please check your internet connection.");
+            return;
+        }
+
+        // Start Host's live camera & microphone stream automatically!
+        await startHostMediaStream();
+
+        // Generate clean random 6-character room code
+        const randomCode = 'LS' + Math.floor(1000 + Math.random() * 9000);
+        document.getElementById("partnerStatusText").innerText = "Connecting to Relay...";
+
+        try {
+            peer = new Peer(randomCode, {
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                        { urls: 'stun:stun4.l.google.com:19302' },
+                        { urls: 'stun:stun.relay.metered.ca:80' },
+                        { urls: 'stun:stun.nextcloud.com:443' }
+                    ]
+                }
+            });
+
+            peer.on('open', (id) => {
+                document.getElementById("partnerRoomCode").innerText = id;
+                document.getElementById("roomInfoBox").style.display = "block";
+                document.getElementById("createRoomBtn").innerText = "✔ Room Active: " + id;
+                document.getElementById("partnerStatusText").innerText = "Waiting for Partner...";
+                document.getElementById("partnerStatusBadge").style.color = "var(--warning)";
+
+                // Generate worldwide shareable link
+                const baseUrl = window.PUBLIC_TUNNEL_URL || (window.location.protocol.startsWith("http") ? window.location.origin : "http://127.0.0.1:8000");
+                const shareLink = `${baseUrl}/lovespouse_controller.html#partner=${id}`;
+
+                const input = document.getElementById("partnerShareInput");
+                if (input) input.value = shareLink;
+
+                log(`🌐 Partner Room created! Worldwide Link ready: ${shareLink}`, "info");
+            });
+
+            peer.on('connection', (conn) => {
+                partnerConn = conn;
+                document.getElementById("partnerStatusText").innerText = "Partner Connected!";
+                document.getElementById("partnerStatusBadge").style.color = "var(--success)";
+                document.getElementById("partnerStatusBadge").style.background = "rgba(0, 230, 118, 0.15)";
+                log("❤️ Partner has connected to your toy! Live control active.", "tx");
+
+                // Initiate live video & audio call to partner (with a short 350ms delay to let DataChannel settle)
+                setTimeout(() => {
+                    if (localHostMediaStream) {
+                        try {
+                            log("📡 Transmitting live video & voice stream to partner...", "tx");
+                            activeMediaCall = peer.call(conn.peer, localHostMediaStream);
+                            if (activeMediaCall) {
+                                activeMediaCall.on('error', (e) => console.warn("Media call error:", e));
+                            }
+                        } catch (e) {
+                            console.warn("Peer media call error:", e);
+                        }
+                    }
+                }, 350);
+
+                conn.on('data', (data) => {
+                    if (!data) return;
+                    if (data.action === "stop" || data.speed === 0) {
+                        log("🛑 Partner pressed STOP (Transmission stopped, connection remains active)", "info");
+                        stopAll(false);
+                        return;
+                    }
+                    if (data.speed !== undefined) {
+                        const spd = parseInt(data.speed, 10);
+                        const m = data.mode || currentMode;
+                        log(`💌 Partner set Speed to: ${spd} (Mode: ${m.toUpperCase()})`, "tx");
+                        currentSpeed = spd;
+                        document.getElementById("speedSlider").value = spd;
+                        document.getElementById("speedValue").innerText = spd;
+                        sendCommand(spd, m);
+                    }
+                });
+
+                conn.on('close', () => {
+                    log("Partner disconnected.", "info");
+                    document.getElementById("partnerStatusText").innerText = "Partner Disconnected";
+                });
+            });
+
+            // Handle incoming calls as well (if partner initiates or reconnects)
+            peer.on('call', (call) => {
+                activeMediaCall = call;
+                call.answer(localHostMediaStream);
+                log("📹 Transmitting video/audio to connected partner call.", "tx");
+            });
+
+            peer.on('error', (err) => {
+                log(`Partner P2P Error: ${err.type}`, "error");
+                document.getElementById("partnerStatusText").innerText = "Error: " + err.type;
+            });
+        } catch (e) {
+            alert("Could not start WebRTC: " + e.message);
+        }
+    }
+
+    function copyPartnerLink() {
+        const input = document.getElementById("partnerShareInput");
+        if (!input || !input.value) {
+            alert("Please create a partner room first!");
+            return;
+        }
+
+        input.focus();
+        input.select();
+        input.setSelectionRange(0, 99999);
+
+        let copied = false;
+        try {
+            copied = document.execCommand('copy');
+        } catch (_) {}
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(input.value).then(() => {
+                copied = true;
+            }).catch(() => {});
+        }
+
+        const btn = document.getElementById("copyLinkBtn");
+        if (btn) {
+            btn.innerText = "✔ Copied!";
+            btn.style.background = "#00e676";
+            btn.style.color = "#000";
+            setTimeout(() => {
+                btn.innerText = "📋 Copy Link";
+                btn.style.background = "";
+                btn.style.color = "";
+            }, 2500);
+        }
+    }
+
+    function joinPartnerRoom(targetCode = null) {
+        const input = targetCode || document.getElementById("joinRoomCodeInput").value.trim().toUpperCase();
+        if (!input) { alert("Please enter a room code."); return; }
+        if (!initPeerIfPossible()) { alert("PeerJS is offline."); return; }
+
+        document.getElementById("partnerStatusText").innerText = "Connecting to Partner...";
+        document.getElementById("partnerStatusBadge").style.color = "var(--warning)";
+
+        const clientPeer = new Peer({
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                    { urls: 'stun:stun3.l.google.com:19302' },
+                    { urls: 'stun:stun4.l.google.com:19302' },
+                    { urls: 'stun:stun.relay.metered.ca:80' },
+                    { urls: 'stun:stun.nextcloud.com:443' }
+                ]
+            }
+        });
+
+        // Listen for incoming live video/audio from the Host
+        clientPeer.on('call', (call) => {
+            activeMediaCall = call;
+            log("📹 Incoming live video & audio call from Host...", "info");
+            // Partner sends NO video/audio (watch & listen only)
+            call.answer();
+
+            const attachStream = (remoteStream) => {
+                const partnerVid = document.getElementById("remotePartnerVideo");
+                const partnerCard = document.getElementById("partnerVideoWindow");
+                if (!partnerVid || !partnerCard) return;
+
+                partnerCard.style.display = "flex";
+
+                if (partnerVid.srcObject !== remoteStream) {
+                    partnerVid.srcObject = remoteStream;
+                }
+
+                partnerVid.muted = true;
+                partnerVid.playsInline = true;
+
+                const p = partnerVid.play();
+                if (p !== undefined) {
+                    p.then(() => {
+                        const prompt = document.getElementById("partnerUnmutePrompt");
+                        if (prompt && partnerVid.muted) prompt.style.display = "flex";
+                    }).catch(err => {
+                        console.warn("Autoplay notice:", err);
+                        const prompt = document.getElementById("partnerUnmutePrompt");
+                        if (prompt) prompt.style.display = "flex";
+                    });
+                }
+
+                remoteStream.onaddtrack = () => {
+                    if (partnerVid.srcObject !== remoteStream) {
+                        partnerVid.srcObject = remoteStream;
+                    }
+                    partnerVid.play().catch(() => {});
+                };
+            };
+
+            call.on('stream', (remoteStream) => {
+                attachStream(remoteStream);
+                log("❤️ Receiving Host live video and voice stream!", "tx");
+            });
+
+            if (call.peerConnection) {
+                call.peerConnection.addEventListener('track', (e) => {
+                    if (e.streams && e.streams[0]) {
+                        attachStream(e.streams[0]);
+                    }
+                });
+            }
+        });
+
+        clientPeer.on('open', () => {
+            log(`Connecting to Partner room: ${input}...`, "info");
+            const conn = clientPeer.connect(input, { reliable: true });
+
+            conn.on('open', () => {
+                partnerClientConn = conn;
+                document.getElementById("partnerStatusText").innerText = "Connected to Toy!";
+                document.getElementById("partnerStatusBadge").style.color = "var(--success)";
+                document.getElementById("partnerStatusBadge").style.background = "rgba(0, 230, 118, 0.15)";
+                log(`❤️ Connected to Partner Room [${input}]! Live remote control active.`, "tx");
+
+                showToast(`Connected to Partner's Toy [Room: ${input}]! Control live while watching your partner.`);
+
+                // Auto-unmute audio on first user touch/click anywhere on page
+                const handleGlobalUnmute = () => {
+                    unmutePartnerAudio();
+                    document.removeEventListener('click', handleGlobalUnmute);
+                    document.removeEventListener('touchstart', handleGlobalUnmute);
+                };
+                document.addEventListener('click', handleGlobalUnmute, { once: true });
+                document.addEventListener('touchstart', handleGlobalUnmute, { once: true });
+
+                conn.on('data', (data) => {
+                    if (data && (data.action === "stop" || data.speed === 0)) {
+                        currentSpeed = 0;
+                        currentMotorSpeed = 0;
+                        document.getElementById("speedSlider").value = 0;
+                        document.getElementById("speedValue").innerText = "0";
+                        if (document.getElementById("motorSlider")) {
+                            document.getElementById("motorSlider").value = 0;
+                            document.getElementById("motorValue").innerText = "0";
+                        }
+                        log("🛑 Toy was stopped (Partner connection remains active)", "info");
+                    }
+                });
+
+                // Intercept commands and broadcast over WebRTC
+                const originalSend = window.sendCommand;
+                window.sendCommand = function(spd, m) {
+                    if (originalSend) originalSend(spd, m);
+                    try {
+                        conn.send({ speed: spd, mode: m || currentMode });
+                    } catch (_) {}
+                };
+            });
+
+            conn.on('error', (e) => {
+                log(`Connection error: ${e}`, "error");
+                document.getElementById("partnerStatusText").innerText = "Connect Error";
+            });
+
+            conn.on('close', () => {
+                log("Disconnected from Partner.", "info");
+                document.getElementById("partnerStatusText").innerText = "Partner Disconnected";
+                const partnerCard = document.getElementById("partnerVideoWindow");
+                if (partnerCard) partnerCard.style.display = "none";
+            });
+        });
+
+        clientPeer.on('error', (err) => {
+            log(`P2P Client Error: ${err.type}`, "error");
+            document.getElementById("partnerStatusText").innerText = "P2P Error";
+        });
+    }
+
+    // Auto-detect #partner=CODE in URL & initialize UI
+    function initPartnerAutoJoin() {
+        // Initialize draggable floating video cards
+        makeDraggable(document.getElementById("hostSelfieWindow"), document.getElementById("hostSelfieHeader"));
+        makeDraggable(document.getElementById("partnerVideoWindow"), document.getElementById("partnerVideoHeader"));
+
+        if (window.location.hash.includes("partner=")) {
+            const raw = window.location.hash.split("partner=")[1];
+            if (raw) {
+                const code = raw.split("&")[0].split("?")[0].trim().toUpperCase();
+                const joinInput = document.getElementById("joinRoomCodeInput");
+                if (joinInput) joinInput.value = code;
+                setTimeout(() => {
+                    joinPartnerRoom(code);
+                }, 800);
+            }
+        }
+    }
+
+    if (document.readyState === "loading") {
+        window.addEventListener("DOMContentLoaded", initPartnerAutoJoin);
+    } else {
+        initPartnerAutoJoin();
+    }
+
+    // Touch Pad Handling (UP = High Speed, DOWN = Low Speed)
+    const touchPad = document.getElementById("touchPad");
+    const touchIndicator = document.getElementById("touchIndicator");
+    const touchLevelBadge = document.getElementById("touchLevelBadge");
+    const touchHint = document.getElementById("touchHint");
+    const holdToggle = document.getElementById("holdToVibrateToggle");
+    let isTouching = false;
+    let lastSendTime = 0;
+
+    function handleTouch(e) {
+        if (e && e.cancelable) e.preventDefault();
+        stopPreset();
+
+        const rect = touchPad.getBoundingClientRect();
+        let clientX, clientY;
+
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else if (e.clientX !== undefined) {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        } else {
+            return;
+        }
+
+        // Clamp coordinates within the touch pad bounds
+        const x = Math.max(16, Math.min(rect.width - 16, clientX - rect.left));
+        const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
+
+        // UP is HIGH speed (Level 9 at top), DOWN is LOW speed (Level 0/1 at bottom)
+        // y = 0 -> ratio = 1 -> intensity = 9
+        // y = rect.height -> ratio = 0 -> intensity = 0
+        const ratio = Math.max(0, Math.min(1, (rect.height - y) / rect.height));
+        const intensity = Math.round(ratio * 9);
+
+        // Update visual indicator
+        touchIndicator.style.display = "block";
+        touchIndicator.style.left = `${x}px`;
+        touchIndicator.style.top = `${y}px`;
+        if (touchHint) touchHint.style.opacity = "0.15";
+
+        // Dynamic badge text & color based on level
+        if (intensity === 0) {
+            touchLevelBadge.innerText = "OFF (0)";
+            touchIndicator.style.background = "#546e7a";
+            touchIndicator.style.boxShadow = "0 0 14px rgba(84, 110, 122, 0.6)";
+        } else if (intensity <= 3) {
+            touchLevelBadge.innerText = `🟢 Speed ${intensity} (Low)`;
+            touchIndicator.style.background = "#00e676";
+            touchIndicator.style.boxShadow = "0 0 20px rgba(0, 230, 118, 0.8)";
+        } else if (intensity <= 6) {
+            touchLevelBadge.innerText = `🟡 Speed ${intensity} (Med)`;
+            touchIndicator.style.background = "#ffb300";
+            touchIndicator.style.boxShadow = "0 0 20px rgba(255, 179, 0, 0.8)";
+        } else {
+            touchLevelBadge.innerText = `🔴 Speed ${intensity} (High)`;
+            touchIndicator.style.background = "#ff1744";
+            touchIndicator.style.boxShadow = "0 0 25px rgba(255, 23, 68, 0.9)";
+        }
+
+        const now = Date.now();
+        if (now - lastSendTime > 80 && intensity !== currentSpeed) {
+            lastSendTime = now;
+            currentSpeed = intensity;
+            document.getElementById("speedSlider").value = currentSpeed;
+            document.getElementById("speedValue").innerText = currentSpeed;
+            sendCommand(currentSpeed);
+        }
+    }
+
+    function onTouchEnd() {
+        if (!isTouching) return;
+        isTouching = false;
+        if (touchHint) touchHint.style.opacity = "0.85";
+
+        if (holdToggle && holdToggle.checked) {
+            touchIndicator.style.display = "none";
+            stopAll(false);
+        } else {
+            touchIndicator.style.boxShadow = "0 0 8px var(--accent)";
+        }
+    }
+
+    // Pointer Events (supports Mouse, Touchscreen & Stylus unified)
+    touchPad.addEventListener("pointerdown", (e) => {
+        isTouching = true;
+        try { touchPad.setPointerCapture(e.pointerId); } catch (_) {}
+        handleTouch(e);
+    });
+
+    touchPad.addEventListener("pointermove", (e) => {
+        if (isTouching) handleTouch(e);
+    });
+
+    touchPad.addEventListener("pointerup", (e) => {
+        try { touchPad.releasePointerCapture(e.pointerId); } catch (_) {}
+        onTouchEnd();
+    });
+
+    touchPad.addEventListener("pointercancel", (e) => {
+        try { touchPad.releasePointerCapture(e.pointerId); } catch (_) {}
+        onTouchEnd();
+    });
+
+    // Touch event fallbacks with preventDefault to eliminate mobile scroll interference
+    touchPad.addEventListener("touchstart", (e) => {
+        if (e.cancelable) e.preventDefault();
+        isTouching = true;
+        handleTouch(e);
+    }, { passive: false });
+
+    touchPad.addEventListener("touchmove", (e) => {
+        if (e.cancelable) e.preventDefault();
+        if (isTouching) handleTouch(e);
+    }, { passive: false });
+
+    touchPad.addEventListener("touchend", () => {
+        onTouchEnd();
+    });
+
+    // Safe initialization after all variables loaded
+    if (typeof renderSequencer === "function") renderSequencer();
+</script>
+</body>
+</html>
