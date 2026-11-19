@@ -2880,24 +2880,28 @@ function startPreset(name) {
     // Live Audio & Video Streaming Engine (One-Way: Host -> Partner)
     // -------------------------------------------------------------
     async function startHostMediaStream() {
+        // 1. If we already have an active stream with live tracks, reuse it!
+        if (localHostMediaStream && localHostMediaStream.active) {
+            const vTracks = localHostMediaStream.getVideoTracks();
+            const aTracks = localHostMediaStream.getAudioTracks();
+            const hasLive = (vTracks.length > 0 && vTracks[0].readyState === 'live') ||
+                            (aTracks.length > 0 && aTracks[0].readyState === 'live');
+            if (hasLive) {
+                console.log("[Host] Reusing already active media stream");
+                return localHostMediaStream;
+            }
+        }
+
         try {
-            if (localHostMediaStream) {
-                localHostMediaStream.getTracks().forEach(t => t.stop());
-            }
-
             let stream = null;
-            const videoConstraints = {
-                width: { ideal: 640 },
-                height: { ideal: 480 },
-                frameRate: { ideal: 24, max: 30 }
-            };
-            if (currentFacingMode) {
-                videoConstraints.facingMode = { ideal: currentFacingMode };
-            }
-
+            // Try standard mobile constraints first
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
-                    video: videoConstraints,
+                    video: {
+                        facingMode: currentFacingMode || "user",
+                        width: { ideal: 640, max: 1280 },
+                        height: { ideal: 480, max: 720 }
+                    },
                     audio: {
                         echoCancellation: true,
                         noiseSuppression: true,
@@ -2905,47 +2909,38 @@ function startPreset(name) {
                     }
                 });
             } catch (e1) {
-                console.warn("Ideal video constraints failed, retrying with standard video+audio:", e1);
-                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                console.warn("Standard constraints failed, trying basic video+audio:", e1);
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                } catch (e2) {
+                    console.warn("Basic video+audio failed, trying video only:", e2);
+                    try {
+                        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    } catch (e3) {
+                        console.warn("Video failed, trying audio only:", e3);
+                        stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                    }
+                }
             }
 
-            localHostMediaStream = stream;
-            const vTracks = localHostMediaStream.getVideoTracks();
-            const aTracks = localHostMediaStream.getAudioTracks();
-            console.log(`[Host] Captured tracks -> Video: ${vTracks.length}, Audio: ${aTracks.length}`);
-
-            if (vTracks.length > 0) {
-                vTracks[0].enabled = true;
+            if (stream) {
+                localHostMediaStream = stream;
+                const selfieVid = document.getElementById("hostSelfieVideo");
+                if (selfieVid) {
+                    selfieVid.srcObject = localHostMediaStream;
+                    selfieVid.muted = true;
+                    selfieVid.playsInline = true;
+                    selfieVid.play().catch(() => {});
+                }
+                const selfieCard = document.getElementById("hostSelfieWindow");
+                if (selfieCard) {
+                    const mirrorPref = localStorage.getItem("ls_show_camera_mirror") === "true";
+                    selfieCard.style.display = mirrorPref ? "flex" : "none";
+                }
             }
-
-            const selfieVid = document.getElementById("hostSelfieVideo");
-            if (selfieVid) {
-                selfieVid.srcObject = localHostMediaStream;
-                selfieVid.muted = true;
-                selfieVid.playsInline = true;
-                selfieVid.play().catch(e => console.warn("Selfie play error:", e));
-            }
-            const selfieCard = document.getElementById("hostSelfieWindow");
-            if (selfieCard) {
-                const mirrorPref = localStorage.getItem("ls_show_camera_mirror") === "true";
-                selfieCard.style.display = mirrorPref ? "flex" : "none";
-            }
-
-            // If call is already active, replace video & audio tracks
-            if (activeMediaCall && activeMediaCall.peerConnection) {
-                const pc = activeMediaCall.peerConnection;
-                const senders = pc.getSenders();
-                const vidTrack = localHostMediaStream.getVideoTracks()[0];
-                const audTrack = localHostMediaStream.getAudioTracks()[0];
-                const vSender = senders.find(s => s.track && s.track.kind === 'video');
-                const aSender = senders.find(s => s.track && s.track.kind === 'audio');
-                if (vSender && vidTrack) vSender.replaceTrack(vidTrack);
-                if (aSender && audTrack) aSender.replaceTrack(audTrack);
-            }
-
             return localHostMediaStream;
         } catch (err) {
-            console.warn("Media capture notice:", err);
+            console.warn("Host media capture error:", err);
             return null;
         }
     }
@@ -3033,6 +3028,9 @@ function startPreset(name) {
                 } else {
                     if (prompt) prompt.style.display = "flex";
                 }
+            }
+            if (partnerClientConn && (!partnerVid || !partnerVid.srcObject)) {
+                try { partnerClientConn.send({ action: "request_stream" }); } catch (e) {}
             }
         } else {
             if (partnerCard) partnerCard.style.display = "none";
@@ -3141,6 +3139,31 @@ function startPreset(name) {
         return true;
     }
 
+        const PEER_ICE_CONFIG = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun.relay.metered.ca:80' },
+            {
+                urls: 'turn:openrelay.metered.ca:80',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            },
+            {
+                urls: 'turn:openrelay.metered.ca:443',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            },
+            {
+                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            }
+        ],
+        sdpSemantics: 'unified-plan'
+    };
+
     async function createPartnerRoom() {
         if (!initPeerIfPossible()) {
             alert("PeerJS is still loading. Please check your internet connection.");
@@ -3156,17 +3179,7 @@ function startPreset(name) {
 
         try {
             peer = new Peer(randomCode, {
-                config: {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'stun:stun2.l.google.com:19302' },
-                        { urls: 'stun:stun3.l.google.com:19302' },
-                        { urls: 'stun:stun4.l.google.com:19302' },
-                        { urls: 'stun:stun.relay.metered.ca:80' },
-                        { urls: 'stun:stun.nextcloud.com:443' }
-                    ]
-                }
+                config: PEER_ICE_CONFIG
             });
 
             peer.on('open', (id) => {
@@ -3193,11 +3206,10 @@ function startPreset(name) {
                 document.getElementById("partnerStatusBadge").style.background = "rgba(0, 230, 118, 0.15)";
                 log("❤️ Partner has connected to your toy! Live control active.", "tx");
 
-                // Initiate live video & audio call to partner (with a short 350ms delay to let DataChannel settle)
-                setTimeout(() => {
+                function initiateMediaCall() {
                     if (localHostMediaStream) {
                         try {
-                            
+                            console.log("[Host] Calling partner with tracks:", localHostMediaStream.getTracks().length);
                             activeMediaCall = peer.call(conn.peer, localHostMediaStream);
                             if (activeMediaCall) {
                                 activeMediaCall.on('error', (e) => console.warn("Media call error:", e));
@@ -3205,11 +3217,25 @@ function startPreset(name) {
                         } catch (e) {
                             console.warn("Peer media call error:", e);
                         }
+                    } else {
+                        startHostMediaStream().then((s) => {
+                            if (s && peer) {
+                                try {
+                                    activeMediaCall = peer.call(conn.peer, s);
+                                } catch (e) {}
+                            }
+                        });
                     }
-                }, 350);
+                }
+                setTimeout(initiateMediaCall, 450);
 
                 conn.on('data', (data) => {
                     if (!data) return;
+                    if (data.action === "request_stream") {
+                        console.log("[Host] Stream requested by partner, initiating media call");
+                        initiateMediaCall();
+                        return;
+                    }
                     if (data.action === "stop" || data.speed === 0) {
                         log("🛑 Partner pressed STOP (Transmission stopped, connection remains active)", "info");
                         stopAll(false);
@@ -3292,17 +3318,7 @@ function startPreset(name) {
         document.getElementById("partnerStatusBadge").style.color = "var(--warning)";
 
         const clientPeer = new Peer({
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' },
-                    { urls: 'stun:stun3.l.google.com:19302' },
-                    { urls: 'stun:stun4.l.google.com:19302' },
-                    { urls: 'stun:stun.relay.metered.ca:80' },
-                    { urls: 'stun:stun.nextcloud.com:443' }
-                ]
-            }
+            config: PEER_ICE_CONFIG
         });
 
         // Listen for incoming live video/audio from the Host
@@ -3377,6 +3393,9 @@ function startPreset(name) {
                 showToast(`Connected to Partner's Toy [Room: ${input}]! Remote control active.`);
                 const arrowElement = document.getElementById("partnerArrow");
                 if (arrowElement) arrowElement.style.display = "inline-block";
+                setTimeout(() => {
+                    try { conn.send({ action: "request_stream" }); } catch (e) {}
+                }, 400);
 
                 // Auto-unmute audio on first user touch/click anywhere on page
                 const handleGlobalUnmute = () => {
