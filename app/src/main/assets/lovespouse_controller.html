@@ -36,7 +36,7 @@
             background: var(--bg-primary);
             color: var(--text-main);
             min-height: 100vh;
-            padding: calc(44px + env(safe-area-inset-top, 0px)) 16px 24px 16px;
+            padding: calc(72px + env(safe-area-inset-top, 0px)) 16px 24px 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -210,11 +210,14 @@
             color: var(--accent);
         }
 
-        .preset-btn.active {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
-            box-shadow: 0 4px 14px var(--accent-glow);
+        .preset-btn.active,
+        .preset-btn.active:hover,
+        .preset-btn.active:focus {
+            background: rgba(255, 64, 129, 0.08) !important;
+            color: var(--accent) !important;
+            border: 1.5px solid var(--accent) !important;
+            box-shadow: 0 0 14px var(--accent-glow) !important;
+            font-weight: 700 !important;
         }
 
         .slider-group {
@@ -546,7 +549,7 @@
             background: rgba(0, 0, 0, 0.65);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
-            z-index: 1100;
+            z-index: 12000;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -567,7 +570,7 @@
             height: 100vh;
             background: #15151f;
             border-right: 1px solid var(--border);
-            z-index: 1200;
+            z-index: 12001;
             box-shadow: 6px 0 28px rgba(0, 0, 0, 0.6);
             transform: translateX(-100%);
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -580,7 +583,7 @@
         }
 
         .drawer-header {
-            padding: 20px;
+            padding: calc(52px + env(safe-area-inset-top, 0px)) 20px 18px 20px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
@@ -763,7 +766,7 @@
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
-            z-index: 2000;
+            z-index: 13000;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -997,28 +1000,34 @@
         }
 
     
-        /* Top Dark Green Gradient Status & Notch Bar */
+        /* Top Bar: Styled in Ready to Broadcast Green */
         .notch-blackout-bar {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             width: 100%;
-            height: 32px;
-            background: linear-gradient(180deg, rgba(0, 230, 118, 0.3) 0%, rgba(6, 38, 20, 0.95) 55%, rgba(18, 18, 22, 0.98) 100%),
-                        linear-gradient(90deg, rgba(0, 230, 118, 0.35) 0%, rgba(4, 28, 14, 0.8) 12%, rgba(4, 28, 14, 0.8) 88%, rgba(0, 230, 118, 0.35) 100%);
-            border-bottom: 1px solid rgba(0, 230, 118, 0.25);
-            z-index: 9999999;
+            height: 38px;
+            background: linear-gradient(180deg, rgba(0, 230, 118, 0.25) 0%, rgba(0, 230, 118, 0.12) 100%), #121216;
+            border-bottom: 1px solid rgba(0, 230, 118, 0.35);
+            z-index: 999;
             pointer-events: none;
-            box-shadow: 0 3px 12px rgba(0, 230, 118, 0.15);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7), 0 0 12px rgba(0, 230, 118, 0.25);
         }
         @supports (padding-top: env(safe-area-inset-top)) {
             .notch-blackout-bar {
-                height: max(32px, env(safe-area-inset-top));
+                height: max(38px, env(safe-area-inset-top));
             }
         }
 
-    </style>
+        /* Demo Mode Top Bar: Custom requested #52B788 / rgb(82, 183, 136) */
+        body.demo-mode .notch-blackout-bar,
+        .notch-blackout-bar.demo-dark-green {
+            background: linear-gradient(180deg, rgba(82, 183, 136, 0.45) 0%, rgba(82, 183, 136, 0.18) 100%), #121216 !important;
+            border-bottom: 2px solid #52B788 !important;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.75), 0 0 14px rgba(82, 183, 136, 0.45) !important;
+        }
+</style>
     <script src="peerjs.min.js"></script>
 </head>
 <body>
@@ -1066,7 +1075,16 @@
 
         <div class="drawer-divider"></div>
 
-        <!-- 3. Settings Option -->
+        <!-- 3. Downloads Option -->
+        <a href="#" class="drawer-item" onclick="openDownloadModal(event)">
+            <span class="drawer-icon">📲</span>
+            <div class="drawer-label-group">
+                <span class="drawer-label">Download Apps</span>
+                <span class="drawer-subtext">Android APK & Windows PC Hub</span>
+            </div>
+        </a>
+
+        <!-- 4. Settings Option -->
         <a href="#" class="drawer-item" onclick="openSettingsModal(event)">
             <span class="drawer-icon">⚙️</span>
             <div class="drawer-label-group">
@@ -1075,7 +1093,7 @@
             </div>
         </a>
 
-        <!-- 4. About Option -->
+        <!-- 5. About Option -->
         <a href="#" class="drawer-item" onclick="openAboutModal(event)">
             <span class="drawer-icon">ℹ️</span>
             <div class="drawer-label-group">
@@ -1161,30 +1179,7 @@
                 </div>
             </div>
 
-            <!-- Setting: App Auto-Updates & Patches -->
-            <div style="padding: 12px 0; border-top: 1px solid var(--border);">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <div>
-                        <div style="font-size: 0.88rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                            <span>🔄 Auto-Update & Patch</span>
-                            <span style="font-size: 0.68rem; background: rgba(0, 230, 118, 0.15); color: var(--success); padding: 2px 7px; border-radius: 6px; font-weight: 700;">Active</span>
-                        </div>
-                        <div style="font-size: 0.74rem; color: var(--text-sub);">Directly receive official live patches for APK & Windows EXE</div>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="settingAutoUpdate" checked onchange="toggleAutoUpdateSetting(this.checked)">
-                        <span class="switch-slider"></span>
-                    </label>
-                </div>
 
-                <div style="background: #14141e; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                    <div>
-                        <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-main);">Channel: Release Stream</div>
-                        <div id="updateStatusText" style="font-size: 0.72rem; color: #a5d6a7;">● Up to date (v1.0.2 - Build 21)</div>
-                    </div>
-                    <button type="button" class="btn" id="checkUpdateBtn" onclick="checkForAppUpdates()" style="padding: 6px 14px; font-size: 0.75rem; white-space: nowrap; border-radius: 8px; background: var(--bg-card-hover); border: 1px solid var(--border);">Check Update</button>
-                </div>
-            </div>
 
             <!-- Diagnostics -->
             <div style="background: #0d0d14; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 4px;">
@@ -1232,6 +1227,68 @@
         </div>
         <div class="modal-footer">
             <button class="btn" style="padding: 8px 18px; font-size: 0.85rem;" onclick="closeModal('aboutModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Download Apps Modal -->
+<div id="downloadModal" class="modal-overlay" onclick="closeModalOnBackdrop(event, 'downloadModal')">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <span class="modal-title">📲 Download Official Apps</span>
+            <button class="drawer-close-btn" onclick="closeModal('downloadModal')">✕</button>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+            <p style="font-size: 0.85rem; color: var(--text-sub); line-height: 1.5; margin: 0;">
+                Get the standalone Native Android App or the portable Windows PC Hub. Both provide continuous hardware keep-alive for uninterrupted toy play.
+            </p>
+
+            <!-- Android App Card -->
+            <div style="background: var(--bg-card-hover); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.5rem;">🤖</span>
+                        <div>
+                            <div style="font-size: 0.95rem; font-weight: 700; color: #fff;">Android Native App</div>
+                            <div style="font-size: 0.75rem; color: var(--text-sub);">Version 1.0 (Direct APK)</div>
+                        </div>
+                    </div>
+                    <span class="status-badge" style="background: rgba(0, 230, 118, 0.15); color: var(--success); border-color: rgba(0, 230, 118, 0.3);">
+                        <span class="status-dot"></span> Active
+                    </span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-sub);">
+                    Includes background Bluetooth LE keep-alive daemon, WebRTC camera/audio permissions, and instant hardware reconnect.
+                </div>
+                <a href="/LoveSpouse_Advance_Android_v1.0.apk" download="LoveSpouse_Advance_Android_v1.0.apk" class="btn" style="text-decoration: none; text-align: center; background: linear-gradient(135deg, #00c853, #009624); padding: 10px; font-size: 0.88rem; font-weight: 700; border-radius: 8px;">
+                    ⬇️ Download Android APK (.apk)
+                </a>
+            </div>
+
+            <!-- Windows PC Hub Card -->
+            <div style="background: var(--bg-card-hover); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.5rem;">💻</span>
+                        <div>
+                            <div style="font-size: 0.95rem; font-weight: 700; color: #fff;">Windows PC Hub</div>
+                            <div style="font-size: 0.75rem; color: var(--text-sub);">Version 1.0 (Portable Release)</div>
+                        </div>
+                    </div>
+                    <span class="status-badge" style="background: rgba(0, 230, 118, 0.15); color: var(--success); border-color: rgba(0, 230, 118, 0.3);">
+                        <span class="status-dot"></span> Standalone
+                    </span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-sub);">
+                    Pre-packaged standalone executable with Windows BLE RF driver, background keep-alive loop, and local web controller.
+                </div>
+                <a href="/LoveSpouse_Advance_PC_v1.0.zip" download="LoveSpouse_Advance_PC_v1.0.zip" class="btn" style="text-decoration: none; text-align: center; background: linear-gradient(135deg, #7c4dff, #ff4081); padding: 10px; font-size: 0.88rem; font-weight: 700; border-radius: 8px;">
+                    ⬇️ Download Windows PC Hub (.zip)
+                </a>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" style="padding: 8px 18px; font-size: 0.85rem;" onclick="closeModal('downloadModal')">Close</button>
         </div>
     </div>
 </div>
@@ -1288,14 +1345,14 @@
 
 
 <div class="container">
-    <header style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 52px; padding: 4px 50px; margin-bottom: 4px;">
+    <header style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 56px; padding: 6px 54px; margin-bottom: 8px;">
         <button id="hamburgerBtn" class="hamburger-btn" aria-label="Open Navigation Menu" onclick="toggleDrawer(true)">
             <span></span>
             <span></span>
             <span></span>
         </button>
-        <h1 style="font-size: 1.6rem; margin: 0; text-align: center; line-height: 1.2;">Love Spouse Advance</h1>
-        <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-sub); text-align: center;">2.4GHz RF Broadcast & Direct BLE Controller</p>
+        <h1 style="font-size: 1.6rem; margin: 0; text-align: center; line-height: 1.25;">Love Spouse Advance</h1>
+        <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-sub); text-align: center;">2.4GHz RF Broadcast & Direct BLE Controller</p>
     </header>
 
     <!-- Transmission Mode Banner -->
@@ -1321,7 +1378,7 @@
         </div>
 
         <div class="preset-grid" style="margin-top: 6px;">
-            <button class="btn" style="background: linear-gradient(145deg, #00c853, #009624);" onclick="setSpeed(1)">🟢 Speed 1 (Whisper)</button>
+            <button class="btn" style="background: linear-gradient(145deg, #00c853, #009624);" onclick="setSpeed(1)">🟢 Speed 1 (Low)</button>
             <button class="btn" style="background: linear-gradient(145deg, #ff9100, #ff6d00);" onclick="setSpeed(4)">🟡 Speed 2 (Med)</button>
             <button class="btn" style="background: linear-gradient(145deg, #e91e63, #c2185b);" onclick="setSpeed(7)">🔴 Speed 3 (High)</button>
             <button id="emergencyStopBtn" class="btn btn-danger" onclick="stopAll(true)">🛑 STOP</button>
@@ -1355,12 +1412,12 @@
     <div class="card">
         <div class="card-title">Classic Vibration Rhythms</div>
         <div class="preset-grid-patterns">
-            <button class="preset-btn" onclick="startPreset('constant')">Steady</button>
-            <button class="preset-btn" onclick="startPreset('pulse')">Pulse</button>
-            <button class="preset-btn" onclick="startPreset('wave')">Wave</button>
-            <button class="preset-btn" onclick="startPreset('escalate')">Escalate</button>
-            <button class="preset-btn" onclick="startPreset('heartbeat')">Heartbeat</button>
-            <button class="preset-btn" onclick="startPreset('random')">Random</button>
+            <button class="preset-btn" data-preset="constant" onclick="startPreset('constant', this)">Steady</button>
+            <button class="preset-btn" data-preset="pulse" onclick="startPreset('pulse', this)">Pulse</button>
+            <button class="preset-btn" data-preset="wave" onclick="startPreset('wave', this)">Wave</button>
+            <button class="preset-btn" data-preset="escalate" onclick="startPreset('escalate', this)">Escalate</button>
+            <button class="preset-btn" data-preset="heartbeat" onclick="startPreset('heartbeat', this)">Heartbeat</button>
+            <button class="preset-btn" data-preset="random" onclick="startPreset('random', this)">Random</button>
         </div>
 
         <div id="advancedSensationsSection" class="advanced-feature">
@@ -1368,12 +1425,12 @@
                 ✨ Advanced Specialty Sensations
             </div>
             <div class="preset-grid-patterns">
-                <button class="preset-btn" style="border-color: rgba(255, 64, 129, 0.4);" onclick="startPreset('climax')">🌊 Climax Ramp</button>
-                <button class="preset-btn" style="border-color: rgba(255, 64, 129, 0.4);" onclick="startPreset('edging')">😈 Tease & Denial</button>
-                <button class="preset-btn" style="border-color: rgba(255, 64, 129, 0.4);" onclick="startPreset('staccato')">⚡ Machine Gun</button>
-                <button class="preset-btn" style="border-color: rgba(255, 64, 129, 0.4);" onclick="startPreset('breathing')">🫀 Respiration</button>
-                <button class="preset-btn" style="border-color: rgba(255, 64, 129, 0.4);" onclick="startPreset('earthquake')">🌋 Earthquake</button>
-                <button class="preset-btn" style="border-color: rgba(255, 64, 129, 0.4);" onclick="startPreset('roulette')">🎲 Roulette Mode</button>
+                <button class="preset-btn" data-preset="climax" onclick="startPreset('climax', this)">🌊 Climax Ramp</button>
+                <button class="preset-btn" data-preset="edging" onclick="startPreset('edging', this)">😈 Tease & Denial</button>
+                <button class="preset-btn" data-preset="staccato" onclick="startPreset('staccato', this)">⚡ Machine Gun</button>
+                <button class="preset-btn" data-preset="breathing" onclick="startPreset('breathing', this)">🫀 Respiration</button>
+                <button class="preset-btn" data-preset="earthquake" onclick="startPreset('earthquake', this)">🌋 Earthquake</button>
+                <button class="preset-btn" data-preset="roulette" onclick="startPreset('roulette', this)">🎲 Roulette Mode</button>
             </div>
             <div id="rouletteBanner" style="display: none; margin-top: 12px; padding: 10px; background: rgba(255, 64, 129, 0.15); border: 1px solid var(--accent); border-radius: 10px; text-align: center; font-size: 0.85rem; color: #ff80ab;">
                 🎲 <span id="rouletteText">Spinning Surprise Roulette...</span>
@@ -1413,6 +1470,24 @@
             <div id="rouletteDareText" style="font-size: 0.85rem; color: #ff80ab; font-style: italic;">
                 "Are you ready for a surprise?"
             </div>
+
+            <!-- Post-Challenge Task Box (Triggered when Toggle is ON) -->
+            <div id="roulettePostTaskBox" style="display: none; margin-top: 14px; padding: 12px; background: rgba(124, 77, 255, 0.16); border: 1px dashed #7c4dff; border-radius: 10px; text-align: center;">
+                <div style="font-size: 0.74rem; font-weight: 800; text-transform: uppercase; color: #b388ff; letter-spacing: 0.5px;">⚡ Bonus Post-Challenge Task</div>
+                <div id="roulettePostTaskText" style="font-size: 0.88rem; font-weight: 700; color: #fff; margin-top: 6px; line-height: 1.4;"></div>
+            </div>
+        </div>
+
+        <!-- Post-Challenge Tasks Toggle Switch -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 10px 14px; background: rgba(124, 77, 255, 0.08); border: 1px solid rgba(124, 77, 255, 0.22); border-radius: 12px;">
+            <div>
+                <div style="font-size: 0.86rem; font-weight: 700; color: #b388ff;">🎁 Post-Challenge Bonus Tasks</div>
+                <div style="font-size: 0.74rem; color: var(--text-sub);">Assigns an extra task, reward, or dare when timer completes</div>
+            </div>
+            <label class="switch" style="margin: 0;">
+                <input type="checkbox" id="postChallengeTasksToggle" checked>
+                <span class="switch-slider"></span>
+            </label>
         </div>
     </div>
 
@@ -1864,6 +1939,13 @@
         if (m) m.classList.add("active");
     }
 
+    function openDownloadModal(e) {
+        if (e) e.preventDefault();
+        toggleDrawer(false);
+        const m = document.getElementById("downloadModal");
+        if (m) m.classList.add("active");
+    }
+
     function closeModal(modalId) {
         const m = document.getElementById(modalId);
         if (m) m.classList.remove("active");
@@ -2012,8 +2094,33 @@
         }
     }
 
-    // Command Dispatcher
+    // Command Dispatcher & Continuous Heartbeat
+    let lastCommandTime = 0;
+
+    async function sendRawKeepAlive(speed, mode) {
+        if (speed <= 0) return;
+        if (window.AndroidBLE && window.AndroidBLE.sendCommand) {
+            try { window.AndroidBLE.sendCommand(speed, mode); } catch (_) {}
+            return;
+        }
+        try {
+            await fetch(API_BASE + `/api/control?speed=${speed}&mode=${mode}`);
+        } catch (_) {}
+    }
+
+    // Continuous Keep-Alive Heartbeat:
+    // Love Spouse RF hardware requires periodic BLE advertisement packets (~every 900ms)
+    // to prevent the internal 2.5s hardware safety watchdog from shutting off the motor.
+    setInterval(() => {
+        const activeSpeed = currentMotorSpeed > 0 ? currentMotorSpeed : currentSpeed;
+        const activeMode = currentMotorSpeed > 0 ? "telescopic" : currentMode;
+        if (activeSpeed > 0 && Date.now() - lastCommandTime >= 850) {
+            sendRawKeepAlive(activeSpeed, activeMode);
+        }
+    }, 850);
+
     async function sendCommand(speed, customMode = null) {
+        lastCommandTime = Date.now();
         const modeToSend = customMode || currentMode;
 
         // Direct Native Android BLE support when running inside Android App
@@ -2134,7 +2241,7 @@
         document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("active"));
     }
 
-function startPreset(name) {
+function startPreset(name, btnElement = null) {
         stopPreset();
         activePreset = name;
 
@@ -2142,8 +2249,20 @@ function startPreset(name) {
         const rBanner = document.getElementById("rouletteBanner");
         if (rBanner && name !== "roulette") rBanner.style.display = "none";
 
-        const btn = Array.from(document.querySelectorAll(".preset-btn")).find(b => b.innerText.toLowerCase().includes(name));
-        if (btn) btn.classList.add("active");
+        if (btnElement && btnElement.classList) {
+            btnElement.classList.add("active");
+        } else {
+            const btn = document.querySelector(`.preset-btn[data-preset="${name}"]`) ||
+                        Array.from(document.querySelectorAll(".preset-btn")).find(b => {
+                            const txt = b.innerText.toLowerCase();
+                            if (name === "constant" && txt.includes("steady")) return true;
+                            if (name === "breathing" && txt.includes("respiration")) return true;
+                            if (name === "staccato" && txt.includes("machine gun")) return true;
+                            if (name === "edging" && (txt.includes("tease") || txt.includes("denial"))) return true;
+                            return txt.includes(name);
+                        });
+            if (btn) btn.classList.add("active");
+        }
 
         const advancedNames = ["climax", "edging", "staccato", "breathing", "earthquake", "roulette"];
         if (advancedNames.includes(name)) {
@@ -2160,19 +2279,24 @@ function startPreset(name) {
             presetTimer = setInterval(() => {
                 step = (step + 1) % 2;
                 const spd = step === 1 ? 8 : 0;
+                currentSpeed = spd;
                 sendCommand(spd);
+                document.getElementById("speedValue").innerText = spd;
+                document.getElementById("speedSlider").value = spd;
             }, 600);
         } else if (name === "wave") {
             const pattern = [2, 4, 6, 8, 9, 7, 5, 3, 1];
             presetTimer = setInterval(() => {
                 step = (step + 1) % pattern.length;
-                sendCommand(pattern[step]);
-                document.getElementById("speedValue").innerText = pattern[step];
-                document.getElementById("speedSlider").value = pattern[step];
+                currentSpeed = pattern[step];
+                sendCommand(currentSpeed);
+                document.getElementById("speedValue").innerText = currentSpeed;
+                document.getElementById("speedSlider").value = currentSpeed;
             }, 450);
         } else if (name === "escalate") {
             let spd = 1;
             presetTimer = setInterval(() => {
+                currentSpeed = spd;
                 sendCommand(spd);
                 document.getElementById("speedValue").innerText = spd;
                 document.getElementById("speedSlider").value = spd;
@@ -2182,13 +2306,15 @@ function startPreset(name) {
             const beats = [7, 0, 9, 0, 0, 0];
             presetTimer = setInterval(() => {
                 step = (step + 1) % beats.length;
-                sendCommand(beats[step]);
-                document.getElementById("speedValue").innerText = beats[step];
-                document.getElementById("speedSlider").value = beats[step];
+                currentSpeed = beats[step];
+                sendCommand(currentSpeed);
+                document.getElementById("speedValue").innerText = currentSpeed;
+                document.getElementById("speedSlider").value = currentSpeed;
             }, 250);
         } else if (name === "random") {
             presetTimer = setInterval(() => {
                 const spd = Math.floor(Math.random() * 10);
+                currentSpeed = spd;
                 sendCommand(spd);
                 document.getElementById("speedValue").innerText = spd;
                 document.getElementById("speedSlider").value = spd;
@@ -2373,21 +2499,24 @@ function startPreset(name) {
 
         if (name === "climax") {
             log("🌊 Climax Ramp: Starting gradual tension build...", "info");
-            // 2-minute gradual crescendo curve
-            const curve = [1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 7, 8, 9, 9, 9, 9, 7, 5, 2, 0];
+            const curve = [1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9, 8, 6, 4, 2, 0];
             let idx = 0;
+            currentSpeed = curve[0];
+            sendCommand(currentSpeed);
+            document.getElementById("speedSlider").value = currentSpeed;
+            document.getElementById("speedValue").innerText = currentSpeed;
             presetTimer = setInterval(() => {
-                const spd = curve[idx];
-                sendCommand(spd);
-                document.getElementById("speedSlider").value = spd;
-                document.getElementById("speedValue").innerText = spd;
                 idx++;
                 if (idx >= curve.length) {
                     stopAll(true);
                     log("🌊 Climax Ramp completed!", "info");
+                    return;
                 }
-            }, 6000); // changes every 6s (total 2 mins)
-            sendCommand(1);
+                currentSpeed = curve[idx];
+                sendCommand(currentSpeed);
+                document.getElementById("speedSlider").value = currentSpeed;
+                document.getElementById("speedValue").innerText = currentSpeed;
+            }, 2500); // Responsive 2.5s crescendo steps
         } else if (name === "edging") {
             log("😈 Tease & Denial: Building up with sudden drop-offs...", "info");
             let edgSpeed = 1;
@@ -2700,12 +2829,69 @@ function startPreset(name) {
     let rouletteInterval = null;
     let rouletteCountdown = null;
     const DARE_PROMPTS = [
-        "Hold this speed without making a sound!",
+        "Hold this speed without making a single sound!",
         "Close your eyes and breathe deep for the entire countdown.",
-        "Hands-free challenge! Feel every vibration pulse.",
-        "Double-trouble: tease yourself until the timer hits zero.",
-        "Surrender all control to the toy!",
-        "Maximum sensation focus: no touching allowed."
+        "Hands-free challenge! Look at the ceiling and do not move.",
+        "Bite your lip and hold back any reaction until zero!",
+        "Arch your back and surrender total control to the motor.",
+        "Whisper three words out loud (or to partner) describing what you feel.",
+        "Try not to squirm—stay completely frozen in place!",
+        "Count down backwards out loud with every pulse.",
+        "Tease with light touches around the edges without touching the center.",
+        "Take deep, slow breaths—inhale for 4 seconds, exhale for 4 seconds.",
+        "Tense your core on every high beat and relax on the low beat.",
+        "No touching allowed! Endure the full countdown with eyes shut.",
+        "Describe out loud in detail how the sensation feels right now.",
+        "Give your partner full control of the next speed choice!",
+        "Hold a slow, steady sigh without breaking pitch.",
+        "Put your hands behind your head and don't move an inch.",
+        "Try to resist shivering as the power builds up.",
+        "Kiss your partner (or your wrist) passionately until the buzzer sounds.",
+        "Think of the naughtiest secret you have and keep it in mind until zero.",
+        "Edge close to the limit, but do NOT cross it before time is up!",
+        "Place one hand over your heart and feel how fast it races.",
+        "Match the toy's rhythm with your breathing.",
+        "Squeeze your eyes shut and describe your favorite fantasy in one breath.",
+        "Endure this speed silently—if you make a sound, spin again immediately!",
+        "Tilt your head back and let the sensations completely take over.",
+        "Maintain direct eye contact with your partner (or camera) until zero.",
+        "Gently stroke your neck and collarbone while the toy pulses.",
+        "Slowly hum a continuous tune without letting vibrations break your pitch.",
+        "Clench and release your muscles in sync with every vibration wave.",
+        "No hands on the controls! Let the countdown run its course uninterrupted.",
+        "Keep your eyes locked shut and imagine your partner controlling you.",
+        "Whisper: 'I surrender to this speed' three times softly.",
+        "Grip the sheets or pillow tight and don't let out a gasp.",
+        "Freeze like a statue—any flinch adds 10 bonus seconds!",
+        "Place your palms flat against the bed and feel the rumble resonate.",
+        "Focus entirely on the exact point of vibration and rate the intensity 1-10.",
+        "Take three slow sips of air and exhale through parted lips.",
+        "Let your partner whisper a secret dare into your ear while you wait.",
+        "Hold your breath for the final 5 seconds before the buzzer sounds.",
+        "Smile through the intensity and tell your partner how good it feels."
+    ];
+
+    const POST_CHALLENGE_TASKS = [
+        "💋 Kiss your partner passionately for 30 seconds (or send them a spicy voice note).",
+        "😈 Penalty Task: Increase to Speed 9 for 15 seconds without making a sound!",
+        "🍓 Sweet Reward: Drink a cold sip of water and enjoy 1 minute of total relaxation.",
+        "👑 Command Task: Strip one piece of clothing or reveal your favorite secret.",
+        "💆 Massage Dare: Give your partner (or yourself) a gentle 60-second neck/shoulder massage.",
+        "🔥 Double Down: Immediately spin the roulette wheel one more time!",
+        "🧘 Sensory Challenge: Close your eyes and keep hands above your head for 45 seconds.",
+        "💌 Confession Task: Tell your partner the most intense thing you felt during the spin.",
+        "⚡ Power Burst: Tap the Touch Pad to maximum power for 10 seconds of raw sensation.",
+        "🫀 Breathing Reset: Take 5 slow, deep breaths with your eyes completely shut.",
+        "🎯 Partner's Turn: Hand control over to your partner for the next round!",
+        "😈 Tease Dare: Hold your hands behind your back and endure 30 seconds of slow pulses.",
+        "🧊 Sensation Contrast: Place something cold (like an ice cube or cold glass) on your skin.",
+        "📸 Visual Dare: Pose playfully for your partner or glance in the mirror and smile.",
+        "🎶 Music Sync: Turn on your favorite song and let the next vibration sync with the beat.",
+        "🔒 Lockout Dare: Put the controls away for 2 minutes and savor the lingering afterglow.",
+        "💬 True or Dare: Answer truthfully: what's the wilder fantasy you haven't tried yet?",
+        "🔥 Climax Prep: Select 'Climax Ramp' next and ride the crescendo!",
+        "🛌 Slow Surrender: Lie completely flat, relax every muscle, and enjoy 60 seconds of gentle Steady vibration.",
+        "🤫 Whisper Task: Send your partner a 10-second whisper recording describing this session."
     ];
 
     function spinRoulette() {
@@ -2718,6 +2904,9 @@ function startPreset(name) {
         const dareText = document.getElementById("rouletteDareText");
         const badge = document.getElementById("rouletteStatusBadge");
         const statusText = document.getElementById("rouletteStatusText");
+        const postBox = document.getElementById("roulettePostTaskBox");
+
+        if (postBox) postBox.style.display = "none";
 
         badge.style.color = "var(--success)";
         badge.style.background = "rgba(0, 230, 118, 0.15)";
@@ -2741,6 +2930,7 @@ function startPreset(name) {
                 dareText.innerText = `"${dare}"`;
                 statusText.innerText = `Active: ${duration}s`;
 
+                currentSpeed = finalSpeed;
                 sendCommand(finalSpeed);
                 document.getElementById("speedSlider").value = finalSpeed;
                 document.getElementById("speedValue").innerText = finalSpeed;
@@ -2752,12 +2942,23 @@ function startPreset(name) {
                 rouletteCountdown = setInterval(() => {
                     timeLeft--;
                     timerDial.innerText = `⏳ Countdown: ${timeLeft}s remaining`;
+                    sendRawKeepAlive(finalSpeed, currentMode);
                     if (timeLeft <= 0) {
                         clearInterval(rouletteCountdown);
                         rouletteCountdown = null;
                         stopAll(true);
                         timerDial.innerText = "🎉 Challenge Complete!";
                         statusText.innerText = "Completed";
+
+                        // Trigger Post-Challenge Bonus Task if toggle is ON
+                        const postToggle = document.getElementById("postChallengeTasksToggle");
+                        const postText = document.getElementById("roulettePostTaskText");
+                        if (postToggle && postToggle.checked && postBox && postText) {
+                            const randomTask = POST_CHALLENGE_TASKS[Math.floor(Math.random() * POST_CHALLENGE_TASKS.length)];
+                            postText.innerText = randomTask;
+                            postBox.style.display = "block";
+                            log(`⚡ Bonus Post-Challenge Task: ${randomTask}`, "info");
+                        }
                     }
                 }, 1000);
             }
@@ -2771,6 +2972,8 @@ function startPreset(name) {
         document.getElementById("rouletteTimerDial").innerText = "Press Spin to Begin";
         document.getElementById("rouletteDareText").innerText = '"Are you ready for a surprise?"';
         document.getElementById("rouletteStatusText").innerText = "Stopped";
+        const postBox = document.getElementById("roulettePostTaskBox");
+        if (postBox) postBox.style.display = "none";
         stopAll(true);
     }
 
@@ -3341,6 +3544,18 @@ function startPreset(name) {
     function joinPartnerRoom(targetCode = null) {
         const input = targetCode || document.getElementById("joinRoomCodeInput").value.trim().toUpperCase();
         if (!input) { alert("Please enter a room code."); return; }
+
+        // Simulated Local Demo Mode - No external PeerJS lookup needed
+        if (input === "DEMO") {
+            log("🎮 Demo Mode: Simulated local test room active (no remote partner).", "info");
+            document.getElementById("partnerStatusText").innerText = "Demo Simulated Room";
+            document.getElementById("partnerStatusBadge").style.color = "var(--success)";
+            document.getElementById("partnerStatusBadge").style.background = "rgba(0, 230, 118, 0.15)";
+            const arrowElement = document.getElementById("partnerArrow");
+            if (arrowElement) arrowElement.style.display = "inline-block";
+            return;
+        }
+
         if (!initPeerIfPossible()) { alert("PeerJS is offline."); return; }
 
         document.getElementById("partnerStatusText").innerText = "Connecting to Partner...";
@@ -3473,8 +3688,14 @@ function startPreset(name) {
         });
 
         clientPeer.on('error', (err) => {
-            log(`P2P Client Error: ${err.type}`, "error");
-            document.getElementById("partnerStatusText").innerText = "P2P Error";
+            if (err.type === 'peer-unavailable') {
+                log(`Room [${input}] is currently offline or does not exist.`, "info");
+                document.getElementById("partnerStatusText").innerText = "Room Offline";
+                document.getElementById("partnerStatusBadge").style.color = "var(--text-sub)";
+            } else {
+                log(`P2P Client Notice: ${err.type}`, "info");
+                document.getElementById("partnerStatusText").innerText = "P2P Offline";
+            }
         });
     }
 
@@ -3484,6 +3705,19 @@ function startPreset(name) {
         makeDraggable(document.getElementById("hostSelfieWindow"), document.getElementById("hostSelfieHeader"));
         makeDraggable(document.getElementById("partnerVideoWindow"), document.getElementById("partnerVideoHeader"));
 
+        function applyDemoMode() {
+            const isDemo = window.location.hash.toLowerCase().includes("demo") || window.location.search.toLowerCase().includes("demo");
+            const bar = document.getElementById("notchBlackoutBar");
+            if (isDemo) {
+                document.body.classList.add("demo-mode");
+                if (bar) bar.classList.add("demo-dark-green");
+            } else {
+                document.body.classList.remove("demo-mode");
+                if (bar) bar.classList.remove("demo-dark-green");
+            }
+        }
+        applyDemoMode();
+        window.addEventListener("hashchange", applyDemoMode);
         if (window.location.hash.includes("partner=")) {
             const arrowElement = document.getElementById("partnerArrow");
             if (arrowElement) arrowElement.style.display = "inline-block";
