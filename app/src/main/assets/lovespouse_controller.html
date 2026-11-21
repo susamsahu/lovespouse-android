@@ -588,6 +588,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            background: #15151f;
+            position: relative;
+            z-index: 12002;
         }
 
         .drawer-title {
@@ -1010,7 +1013,7 @@
             height: 38px;
             background: linear-gradient(180deg, rgba(0, 230, 118, 0.25) 0%, rgba(0, 230, 118, 0.12) 100%), #121216;
             border-bottom: 1px solid rgba(0, 230, 118, 0.35);
-            z-index: 999;
+            z-index: 500;
             pointer-events: none;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7), 0 0 12px rgba(0, 230, 118, 0.25);
         }
@@ -1272,18 +1275,18 @@
                         <span style="font-size: 1.5rem;">💻</span>
                         <div>
                             <div style="font-size: 0.95rem; font-weight: 700; color: #fff;">Windows PC Hub</div>
-                            <div style="font-size: 0.75rem; color: var(--text-sub);">Version 1.0 (Portable Release)</div>
+                            <div style="font-size: 0.75rem; color: var(--text-sub);">Version 1.0 (Direct Executable)</div>
                         </div>
                     </div>
                     <span class="status-badge" style="background: rgba(0, 230, 118, 0.15); color: var(--success); border-color: rgba(0, 230, 118, 0.3);">
-                        <span class="status-dot"></span> Standalone
+                        <span class="status-dot"></span> Direct Run
                     </span>
                 </div>
                 <div style="font-size: 0.8rem; color: var(--text-sub);">
-                    Pre-packaged standalone executable with Windows BLE RF driver, background keep-alive loop, and local web controller.
+                    Single standalone executable. Simply download and double-click to run immediately without unzipping or installing.
                 </div>
-                <a href="/LoveSpouse_Advance_PC_v1.0.zip" download="LoveSpouse_Advance_PC_v1.0.zip" class="btn" style="text-decoration: none; text-align: center; background: linear-gradient(135deg, #7c4dff, #ff4081); padding: 10px; font-size: 0.88rem; font-weight: 700; border-radius: 8px;">
-                    ⬇️ Download Windows PC Hub (.zip)
+                <a href="/LoveSpouse_Advance_PC.exe" download="LoveSpouse_Advance_PC.exe" class="btn" style="text-decoration: none; text-align: center; background: linear-gradient(135deg, #7c4dff, #ff4081); padding: 10px; font-size: 0.88rem; font-weight: 700; border-radius: 8px;">
+                    ⬇️ Download Windows PC App (.exe)
                 </a>
             </div>
         </div>
@@ -2187,54 +2190,159 @@
         onIntensityChange(val);
     }
 
+    let _isStoppingAll = false;
     async function stopAll(manual = false) {
-        triggerHapticFeedback([60, 40, 60]);
-        if (typeof isMotionActive !== "undefined" && isMotionActive && manual) stopMotionControl();
-        if (typeof isSeqRunning !== "undefined" && isSeqRunning) stopSequencer();
-        if (isSoundActive) stopSoundControl();
-        stopPreset();
-        currentSpeed = 0;
-        currentMotorSpeed = 0;
-        document.getElementById("speedSlider").value = 0;
-        document.getElementById("speedValue").innerText = "0";
-        if (document.getElementById("motorSlider")) {
-            document.getElementById("motorSlider").value = 0;
-            document.getElementById("motorValue").innerText = "0";
-        }
+        if (_isStoppingAll) return;
+        _isStoppingAll = true;
 
-        const indicator = document.getElementById("touchIndicator");
-        if (indicator) indicator.style.display = "none";
-
-        // Dispatch immediate STOP commands over both API channels
         try {
-            await Promise.all([
-                fetch(API_BASE + `/api/control?speed=0&mode=${currentMode}`),
-                fetch(API_BASE + '/api/stop')
-            ]);
-        } catch (_) {}
+            triggerHapticFeedback([60, 40, 60]);
 
-        // Notify partner that vibration stopped while KEEPING the P2P room connection 100% active!
-        if (typeof partnerConn !== "undefined" && partnerConn && partnerConn.open) {
-            try { partnerConn.send({ action: "stop", speed: 0 }); } catch (_) {}
-        }
-        if (typeof partnerClientConn !== "undefined" && partnerClientConn && partnerClientConn.open) {
-            try { partnerClientConn.send({ action: "stop", speed: 0 }); } catch (_) {}
-        }
+            // 1. Stop Classic & Advanced Rhythms/Presets
+            stopPreset();
 
-        if (manual) {
-            const hasPartner = (typeof partnerConn !== "undefined" && partnerConn && partnerConn.open) ||
-                               (typeof partnerClientConn !== "undefined" && partnerClientConn && partnerClientConn.open);
-            log(hasPartner ? "🛑 ALL VIBRATION STOPPED (Partner connection remains active)" : "🛑 ALL VIBRATION STOPPED", "error");
+            // 2. Stop 8-Step Sequencer
+            if (typeof isSeqRunning !== "undefined" && isSeqRunning) {
+                isSeqRunning = false;
+                if (typeof seqTimer !== "undefined" && seqTimer) {
+                    clearTimeout(seqTimer);
+                    seqTimer = null;
+                }
+                document.querySelectorAll(".seq-step").forEach(el => el.classList.remove("active"));
+                const seqBtn = document.getElementById("seqPlayBtn");
+                if (seqBtn) {
+                    seqBtn.innerText = "▶ Play Loop";
+                    seqBtn.style.background = "linear-gradient(135deg, #00c853, #009624)";
+                }
+                const seqText = document.getElementById("seqStatusText");
+                if (seqText) seqText.innerText = "Stopped";
+            }
+
+            // 3. Stop Roulette Challenge & Countdown
+            if (typeof rouletteInterval !== "undefined" && rouletteInterval) {
+                clearInterval(rouletteInterval);
+                rouletteInterval = null;
+            }
+            if (typeof rouletteCountdown !== "undefined" && rouletteCountdown) {
+                clearInterval(rouletteCountdown);
+                rouletteCountdown = null;
+            }
+            const rSpeedDial = document.getElementById("rouletteSpeedDial");
+            if (rSpeedDial) rSpeedDial.innerText = "?";
+            const rTimerDial = document.getElementById("rouletteTimerDial");
+            if (rTimerDial) rTimerDial.innerText = "Press Spin to Begin";
+            const rDareText = document.getElementById("rouletteDareText");
+            if (rDareText) rDareText.innerText = '"Are you ready for a surprise?"';
+            const rStatusText = document.getElementById("rouletteStatusText");
+            if (rStatusText) rStatusText.innerText = "Stopped";
+            const postBox = document.getElementById("roulettePostTaskBox");
+            if (postBox) postBox.style.display = "none";
+
+            // 4. Stop Sound / Mic Reactive Control
+            if (typeof isSoundActive !== "undefined" && isSoundActive) {
+                stopSoundControl();
+            }
+
+            // 5. Stop Phone Tilt & Motion Control
+            if (typeof isMotionActive !== "undefined" && isMotionActive) {
+                isMotionActive = false;
+                try {
+                    window.removeEventListener('deviceorientation', handleOrientation);
+                    window.removeEventListener('devicemotion', handleMotion);
+                } catch (_) {}
+                const mBtn = document.getElementById("motionToggleBtn");
+                if (mBtn) {
+                    mBtn.innerText = "📱 Enable Tilt & Shake Control";
+                    mBtn.style.background = "linear-gradient(135deg, #7c4dff, #ff4081)";
+                }
+                const mText = document.getElementById("motionStatusText");
+                if (mText) mText.innerText = "Inactive";
+                const mBadge = document.getElementById("motionStatusBadge");
+                if (mBadge) {
+                    mBadge.style.color = "var(--accent-secondary)";
+                    mBadge.style.background = "rgba(124, 77, 255, 0.15)";
+                    mBadge.style.borderColor = "rgba(124, 77, 255, 0.3)";
+                }
+                const tMeter = document.getElementById("tiltMeterFill");
+                if (tMeter) tMeter.style.width = "0%";
+            }
+
+            // 6. Stop Video Funscript Player
+            if (typeof videoAnimFrame !== "undefined" && videoAnimFrame) {
+                cancelAnimationFrame(videoAnimFrame);
+                videoAnimFrame = null;
+            }
+            const vPlayer = document.getElementById("videoPlayer");
+            if (vPlayer && !vPlayer.paused) {
+                try { vPlayer.pause(); } catch (_) {}
+            }
+
+            // 7. Reset Touchpad Indicator
+            const indicator = document.getElementById("touchIndicator");
+            if (indicator) indicator.style.display = "none";
+
+            // 8. Zero out speeds and slider UI
+            currentSpeed = 0;
+            currentMotorSpeed = 0;
+            const spdSlider = document.getElementById("speedSlider");
+            if (spdSlider) spdSlider.value = 0;
+            const spdVal = document.getElementById("speedValue");
+            if (spdVal) spdVal.innerText = "0";
+            const mtrSlider = document.getElementById("motorSlider");
+            if (mtrSlider) mtrSlider.value = 0;
+            const mtrVal = document.getElementById("motorValue");
+            if (mtrVal) mtrVal.innerText = "0";
+
+            // 9. DIRECT NATIVE ANDROID BLE TRANSMISSION (Stops Android hardware RF instantly with ZERO spike)
+            if (window.AndroidBLE && window.AndroidBLE.sendCommand) {
+                try {
+                    window.AndroidBLE.sendCommand(0, currentMode || "shake");
+                    window.AndroidBLE.sendCommand(0, "telescopic");
+                } catch (e) {
+                    console.error("AndroidBLE stop error", e);
+                }
+            }
+
+            // 10. HTTP API Transmission (Stops PC / Python backend BLE hardware)
+            try {
+                await Promise.allSettled([
+                    fetch(API_BASE + `/api/control?speed=0&mode=${currentMode || 'shake'}`),
+                    fetch(API_BASE + '/api/stop')
+                ]);
+            } catch (_) {}
+
+            // 11. WebRTC P2P Partner notification (Keep connection alive, notify partner)
+            if (typeof partnerConn !== "undefined" && partnerConn && partnerConn.open) {
+                try { partnerConn.send({ action: "stop", speed: 0 }); } catch (_) {}
+            }
+            if (typeof partnerClientConn !== "undefined" && partnerClientConn && partnerClientConn.open) {
+                try { partnerClientConn.send({ action: "stop", speed: 0 }); } catch (_) {}
+            }
+
+            // 12. Update Main Status Text
+            const stText = document.getElementById("statusText");
+            if (stText) stText.innerText = "Ready to Broadcast";
+
+            if (manual) {
+                const hasPartner = (typeof partnerConn !== "undefined" && partnerConn && partnerConn.open) ||
+                                   (typeof partnerClientConn !== "undefined" && partnerClientConn && partnerClientConn.open);
+                log(hasPartner ? "🛑 ALL VIBRATION STOPPED (Partner connection remains active)" : "🛑 ALL VIBRATION STOPPED", "error");
+            }
+        } finally {
+            _isStoppingAll = false;
         }
     }
 
-        function stopPreset() {
+    function stopPreset() {
         if (presetTimer) {
             clearInterval(presetTimer);
             clearTimeout(presetTimer);
             presetTimer = null;
         }
-        if (typeof isSeqRunning !== 'undefined' && isSeqRunning) stopSequencer();
+        if (typeof rouletteCountdown !== "undefined" && rouletteCountdown) {
+            clearInterval(rouletteCountdown);
+            rouletteCountdown = null;
+        }
         activePreset = null;
         const rBanner = document.getElementById("rouletteBanner");
         if (rBanner) rBanner.style.display = "none";
@@ -2597,12 +2705,18 @@ function startPreset(name, btnElement = null) {
                 const rText = document.getElementById("rouletteText");
                 if (rText) rText.innerText = `🎲 Speed ${surpriseSpeed} for next ${timeLeft}s!`;
 
-                const countdown = setInterval(() => {
-                    if (activePreset !== "roulette") { clearInterval(countdown); return; }
+                if (presetTimer) { clearInterval(presetTimer); clearTimeout(presetTimer); }
+                presetTimer = setInterval(() => {
+                    if (activePreset !== "roulette") { 
+                        clearInterval(presetTimer); 
+                        presetTimer = null;
+                        return; 
+                    }
                     timeLeft--;
                     if (rText) rText.innerText = `🎲 Speed ${surpriseSpeed} for next ${timeLeft}s!`;
                     if (timeLeft <= 0) {
-                        clearInterval(countdown);
+                        clearInterval(presetTimer);
+                        presetTimer = null;
                         rollSurprise();
                     }
                 }, 1000);
