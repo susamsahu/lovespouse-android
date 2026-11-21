@@ -90,6 +90,19 @@ public class LoveSpouseBleManager {
         }
     }
 
+    private byte[] lastActivePayload = null;
+    private int currentSpeed = 0;
+
+    private final Runnable keepAliveRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (currentSpeed > 0 && lastActivePayload != null) {
+                broadcastPayload(lastActivePayload, false);
+                handler.postDelayed(this, 900);
+            }
+        }
+    };
+
     public synchronized void sendCommand(int speed, String mode) {
         if (advertiser == null) {
             initBluetooth();
@@ -119,8 +132,20 @@ public class LoveSpouseBleManager {
 
         if (suffix == null) suffix = "C5175C";
 
-        byte[] payload = hexToBytes(PREFIX_HEX + suffix);
-        broadcastPayload(payload);
+        if (speed <= 0) {
+            currentSpeed = 0;
+            lastActivePayload = null;
+            handler.removeCallbacks(keepAliveRunnable);
+            byte[] stopPayload = hexToBytes(PREFIX_HEX + suffix);
+            broadcastPayload(stopPayload, true);
+        } else {
+            currentSpeed = speed;
+            byte[] payload = hexToBytes(PREFIX_HEX + suffix);
+            lastActivePayload = payload;
+            handler.removeCallbacks(keepAliveRunnable);
+            broadcastPayload(payload, false);
+            handler.postDelayed(keepAliveRunnable, 900);
+        }
     }
 
     private final AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
@@ -137,7 +162,7 @@ public class LoveSpouseBleManager {
         }
     };
 
-    private void broadcastPayload(byte[] payload) {
+    private void broadcastPayload(byte[] payload, boolean isStop) {
         try {
             if (isBroadcasting) {
                 advertiser.stopAdvertising(advertiseCallback);
@@ -157,13 +182,15 @@ public class LoveSpouseBleManager {
 
             advertiser.startAdvertising(settings, data, advertiseCallback);
 
-            // Repeat pulse for 450ms to ensure 100% RF packet receipt by toy
-            handler.postDelayed(() -> {
-                try {
-                    advertiser.stopAdvertising(advertiseCallback);
-                    isBroadcasting = false;
-                } catch (Exception ignored) {}
-            }, 450);
+            if (isStop) {
+                // For stop commands, pulse for 450ms then shut down RF
+                handler.postDelayed(() -> {
+                    try {
+                        advertiser.stopAdvertising(advertiseCallback);
+                        isBroadcasting = false;
+                    } catch (Exception ignored) {}
+                }, 450);
+            }
 
         } catch (SecurityException se) {
             Log.e(TAG, "SecurityException: Missing BLUETOOTH_ADVERTISE permission", se);
